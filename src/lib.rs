@@ -35,15 +35,10 @@ impl MyVec {
     /// ```
     ///
     pub fn push(&mut self, value: T) {
-        let layout = core::alloc::Layout::new::<T>();
         if self.capacity == 0 {
-            self.capacity = 1;
-            unsafe {
-                let alloc = std::alloc::alloc(layout);
-                self.ptr = core::ptr::NonNull::new_unchecked(alloc as *mut T);
-            }
+            self.realloc_with_capacity(1);
         } else if self.capacity == self.len {
-            self.realloc();
+            self.realloc_with_capacity(self.capacity * 2)
         }
         unsafe {
             self.ptr.as_ptr().add(self.len).write(value);
@@ -122,23 +117,31 @@ impl MyVec {
             )
         }
     }
-    /// Reallocs `MyVec` with double the current capacity.
-    fn realloc(&mut self) {
-        self.realloc_with_capacity(self.capacity * 2)
-    }
     /// Reallocs `MyVec` with a new capacity.
+    ///
+    /// If the current capacity is 0, an `alloc` is performed instead.
     fn realloc_with_capacity(&mut self, capacity: usize) {
-        unsafe {
-            let alloc = std::alloc::realloc(
-                self.ptr.as_ptr() as *mut u8,
-                self.layout(),
-                core::mem::size_of::<T>() * capacity,
-            );
-            if alloc.is_null() {
-                std::alloc::handle_alloc_error(self.layout());
+        let new_size = capacity * std::mem::size_of::<T>();
+        
+        // SAFETY: Size and alignment are correct
+        let alloc = unsafe {
+            if self.capacity == 0 {
+                std::alloc::alloc(core::alloc::Layout::from_size_align_unchecked(
+                    new_size,
+                    std::mem::align_of::<T>(),
+                ))
+            } else {
+                std::alloc::realloc(self.ptr.as_ptr() as *mut u8, self.layout(), new_size)
             }
+        };
+        if alloc.is_null() {
+            std::alloc::handle_alloc_error(self.layout());
+        }
+        // SAFETY: Pointer is not null
+        unsafe {
             self.ptr = core::ptr::NonNull::new_unchecked(alloc as *mut T);
         }
+
         self.capacity = capacity;
     }
 }
