@@ -40,7 +40,7 @@ impl<T> MyVec<T> {
         }
         self.len += 1;
     }
-    /// Inserts a new element at the given index.
+    /// Inserts a new element at the given index, shifting all elements after it to the right.
     /// 
     /// # Panics
     /// Panics if the index is out of bounds.
@@ -58,6 +58,8 @@ impl<T> MyVec<T> {
     /// assert_eq!(vec, [0, 1, 2, 3]);
     /// vec.insert(4, 4);
     /// assert_eq!(vec, [0, 1, 2, 3, 4]);
+    /// vec.insert(4, 5);
+    /// assert_eq!(vec, [0, 1, 2, 3, 5, 4]);
     /// ```
     pub fn insert(&mut self, index: usize, value: T) {
         assert!(index <= self.len);
@@ -89,6 +91,32 @@ impl<T> MyVec<T> {
         }
         self.len -= 1;
         unsafe { Some(self.ptr.as_ptr().add(self.len).read()) }
+    }
+    /// Removes the element at the given index and returns it.
+    /// 
+    /// # Panics
+    /// Panics if the index is out of bounds.
+    /// 
+    /// # Example
+    /// ```
+    /// use myvec::MyVec;
+    ///
+    /// let mut vec = MyVec::from_iter(0..5);
+    /// assert_eq!(vec.remove(2), 2);
+    /// assert_eq!(vec, [0, 1, 3, 4]);
+    /// assert_eq!(vec.remove(0), 0);
+    /// assert_eq!(vec, [1, 3, 4]);
+    /// assert_eq!(vec.remove(2), 4);
+    /// assert_eq!(vec, [1, 3]);
+    /// ```
+    pub fn remove(&mut self, index: usize) -> T {
+        assert!(index < self.len);
+        let dst = unsafe { self.ptr.as_ptr().add(index) };
+        let src = unsafe { dst.add(1) };
+        let ret = unsafe { dst.read() };
+        self.len -= 1;
+        unsafe { std::ptr::copy(src, dst, self.len - index); }
+        ret
     }
     /// Returns the length of the `MyVec`
     /// # Example
