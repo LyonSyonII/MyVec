@@ -10,7 +10,7 @@ impl<T> MyVec<T> {
     /// ```
     /// use myvec::MyVec;
     ///
-    /// let mut vec = MyVec::new();
+    /// let mut vec: MyVec<i32> = MyVec::new();
     /// ```
     pub fn new() -> MyVec<T> {
         MyVec {
@@ -34,14 +34,38 @@ impl<T> MyVec<T> {
     /// ```
     ///
     pub fn push(&mut self, value: T) {
-        if self.capacity == 0 {
-            self.realloc_with_capacity(1);
-        } else if self.capacity == self.len {
-            self.realloc_with_capacity(self.capacity * 2)
-        }
+        self.realloc_if_necessary();
         unsafe {
             self.ptr.as_ptr().add(self.len).write(value);
         }
+        self.len += 1;
+    }
+    /// Inserts a new element at the given index.
+    /// 
+    /// # Panics
+    /// Panics if the index is out of bounds.
+    /// 
+    /// # Example
+    /// ```
+    /// use myvec::MyVec;
+    /// 
+    /// let mut vec = MyVec::new();
+    /// vec.push(1);
+    /// vec.push(3);
+    /// vec.insert(1, 2);
+    /// assert_eq!(vec, [1, 2, 3]);
+    /// vec.insert(0, 0);
+    /// assert_eq!(vec, [0, 1, 2, 3]);
+    /// vec.insert(4, 4);
+    /// assert_eq!(vec, [0, 1, 2, 3, 4]);
+    /// ```
+    pub fn insert(&mut self, index: usize, value: T) {
+        assert!(index <= self.len);
+        self.realloc_if_necessary();
+        let src = unsafe { self.ptr.as_ptr().add(index) };
+        let dst = unsafe { self.ptr.as_ptr().add(index + 1) };
+        unsafe { std::ptr::copy(src, dst, self.len - index); }
+        unsafe { src.write(value); }
         self.len += 1;
     }
     /// Removes the last element from the `MyVec` and returns it.
@@ -116,6 +140,11 @@ impl<T> MyVec<T> {
                 self.capacity * std::mem::size_of::<T>(),
                 std::mem::align_of::<T>(),
             )
+        }
+    }
+    fn realloc_if_necessary(&mut self) {
+        if self.capacity == self.len {
+            self.realloc_with_capacity(1.max(self.capacity * 2))
         }
     }
     /// Reallocs `MyVec` with a new capacity.
@@ -223,6 +252,8 @@ where
 impl<T> core::ops::Index<usize> for MyVec<T> {
     type Output = T;
     fn index(&self, index: usize) -> &Self::Output {
+        // SAFETY
+        assert!(index < self.len);
         unsafe { self.ptr.as_ptr().add(index).as_ref().unwrap_unchecked() }
     }
 }
