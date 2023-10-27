@@ -1,11 +1,10 @@
-type T = u32;
-pub struct MyVec {
+pub struct MyVec<T> {
     len: usize,
     capacity: usize,
     ptr: core::ptr::NonNull<T>,
 }
 
-impl MyVec {
+impl<T> MyVec<T> {
     /// Creates a new `MyVec`
     /// # Example
     /// ```
@@ -13,7 +12,7 @@ impl MyVec {
     ///
     /// let mut vec = MyVec::new();
     /// ```
-    pub fn new() -> MyVec {
+    pub fn new() -> MyVec<T> {
         MyVec {
             len: 0,
             capacity: 0,
@@ -90,6 +89,8 @@ impl MyVec {
     /// use myvec::MyVec;
     ///
     /// let mut vec = MyVec::new();
+    /// assert_eq!(vec.capacity(), 0);
+    /// assert_eq!(vec, []);
     /// vec.push(1);
     /// vec.push(2);
     /// assert_eq!(vec.capacity(), 2);
@@ -122,7 +123,7 @@ impl MyVec {
     /// If the current capacity is 0, an `alloc` is performed instead.
     fn realloc_with_capacity(&mut self, capacity: usize) {
         let new_size = capacity * std::mem::size_of::<T>();
-        
+
         // SAFETY: Size and alignment are correct
         let alloc = unsafe {
             if self.capacity == 0 {
@@ -146,14 +147,15 @@ impl MyVec {
     }
 }
 
-impl Default for MyVec {
+impl<T> Default for MyVec<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Drop for MyVec {
+impl<T> Drop for MyVec<T> {
     fn drop(&mut self) {
+        // SAFETY: Pointer is not null if capacity > 0
         if self.capacity > 0 {
             unsafe {
                 std::alloc::dealloc(self.ptr.as_ptr() as *mut u8, self.layout());
@@ -162,7 +164,7 @@ impl Drop for MyVec {
     }
 }
 
-impl Extend<T> for MyVec {
+impl<T> Extend<T> for MyVec<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let iter = iter.into_iter();
         {
@@ -176,7 +178,7 @@ impl Extend<T> for MyVec {
     }
 }
 
-impl FromIterator<T> for MyVec {
+impl<T> FromIterator<T> for MyVec<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut vec = Self::new();
         vec.extend(iter);
@@ -184,44 +186,51 @@ impl FromIterator<T> for MyVec {
     }
 }
 
-impl AsRef<[T]> for MyVec {
+impl<T> AsRef<[T]> for MyVec<T> {
     fn as_ref(&self) -> &[T] {
+        // SAFETY: Pointer is usable even if len == 0, NonNull::dangling() is a valid pointer for empty slices
         unsafe { std::slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
     }
 }
 
-impl AsMut<[T]> for MyVec {
+impl<T> AsMut<[T]> for MyVec<T> {
     fn as_mut(&mut self) -> &mut [T] {
+        // SAFETY: Pointer is usable even if len == 0, NonNull::dangling() is a valid pointer for empty slices
         unsafe { std::slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
     }
 }
 
-impl<S> PartialEq<S> for MyVec
+impl<T, S> PartialEq<S> for MyVec<T>
 where
     S: AsRef<[T]>,
+    T: PartialEq,
 {
     fn eq(&self, other: &S) -> bool {
         self.as_ref() == other.as_ref()
     }
 }
 
-impl<S> PartialOrd<S> for MyVec
+impl<T, S> PartialOrd<S> for MyVec<T>
 where
     S: AsRef<[T]>,
+    T: PartialOrd,
 {
     fn partial_cmp(&self, other: &S) -> Option<std::cmp::Ordering> {
         self.as_ref().partial_cmp(other.as_ref())
     }
 }
 
-impl core::ops::Index<usize> for MyVec {
+impl<T> core::ops::Index<usize> for MyVec<T> {
     type Output = T;
     fn index(&self, index: usize) -> &Self::Output {
         unsafe { self.ptr.as_ptr().add(index).as_ref().unwrap_unchecked() }
     }
 }
 
-impl core::fmt::Debug for MyVec {
+impl<T> core::fmt::Debug for MyVec<T>
+where
+    T: core::fmt::Debug,
+{
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_list().entries(self.as_ref().iter()).finish()
     }
