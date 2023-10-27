@@ -134,6 +134,9 @@ impl MyVec {
                 self.layout(),
                 core::mem::size_of::<T>() * capacity,
             );
+            if alloc.is_null() {
+                std::alloc::handle_alloc_error(self.layout());
+            }
             self.ptr = core::ptr::NonNull::new_unchecked(alloc as *mut T);
         }
         self.capacity = capacity;
