@@ -337,19 +337,19 @@ where
 
 impl<T> Clone for MyVec<T>
 where
-    T: Clone {
-        fn clone(&self) -> Self {
-            MyVec::from_iter(self.as_ref().iter().cloned())
-        }
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        MyVec::from_iter(self.as_ref().iter().cloned())
     }
-
+}
 
 /// An iterator over the elements of a `MyVec`.
-/// 
+///
 /// # Example
 /// ```
 /// use myvec::MyVec;
-/// 
+///
 /// let vec = MyVec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
 /// let mut iter = vec.into_iter();
@@ -365,11 +365,11 @@ pub struct IntoIter<T> {
 }
 
 /// An iterator over references of the elements of a `MyVec`.
-/// 
+///
 /// # Example
 /// ```
 /// use myvec::MyVec;
-/// 
+///
 /// let vec = MyVec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
 /// let mut iter = vec.iter();
@@ -384,11 +384,11 @@ pub struct Iter<'a, T> {
 }
 
 /// An iterator over mutable references of the elements of a `MyVec`.
-/// 
+///
 /// # Example
 /// ```
 /// use myvec::MyVec;
-/// 
+///
 /// let mut vec = MyVec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
 /// for item in vec.iter_mut() {
@@ -444,7 +444,6 @@ impl<'a, T> Iterator for IterMut<'a, T> {
         // SAFETY: pointer is valid and points to the MyVec allocation
         unsafe { Some(&mut *ptr) }
     }
-    
 }
 
 impl<T> ExactSizeIterator for IntoIter<T> {}
@@ -478,7 +477,7 @@ impl<'a, T> IntoIterator for &'a mut MyVec<T> {
     fn into_iter(self) -> Self::IntoIter {
         IterMut {
             vec: self,
-            index: 0
+            index: 0,
         }
     }
 }
