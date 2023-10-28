@@ -1,3 +1,10 @@
+#![deny(missing_docs)]
+
+//! 
+
+/// My own implementation of `Vec`.
+/// 
+/// Implemented methods should behave exactly like it.
 pub struct MyVec<T> {
     len: usize,
     capacity: usize,
@@ -8,7 +15,7 @@ impl<T> MyVec<T> {
     /// Creates a new `MyVec`
     /// # Example
     /// ```
-    /// use myvec::MyVec;
+    /// use mycollections::MyVec;
     ///
     /// let mut vec: MyVec<i32> = MyVec::new();
     /// ```
@@ -20,15 +27,38 @@ impl<T> MyVec<T> {
         }
     }
     /// Reserves capacity for at least `additional` more elements to be inserted in the `MyVec`.
+    /// 
+    /// New capacity will be the next power of two large enough to hold the additional elements.
+    /// 
+    /// If `T` is a ZST, the `MyVec`'s capacity is always 0, so this will do nothing.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::MyVec;
+    /// 
+    /// let mut vec = MyVec::<u8>::new();
+    /// vec.reserve(6);
+    /// assert_eq!(vec.capacity(), 8);
+    /// 
+    /// // Vec still has len == 0, so 3 elements can be inserted
+    /// vec.reserve(3);
+    /// assert_eq!(vec.capacity(), 8);
+    /// 
+    /// // If we insert 8 elements and reserve for 1, the capacity will double as expected
+    /// vec.extend(0..8);
+    /// assert_eq!(vec.capacity(), 8);
+    /// vec.reserve(1);
+    /// assert_eq!(vec.capacity(), 16);
     pub fn reserve(&mut self, additional: usize) {
         if self.capacity < self.len + additional {
-            self.realloc_with_capacity(self.len + additional)
+            let min_capacity = self.len + additional;
+            self.realloc_with_capacity(min_capacity.next_power_of_two())
         }
     }
     /// Adds a new element to the `MyVec`
     /// # Example
     /// ```
-    /// use myvec::MyVec;
+    /// use mycollections::MyVec;
     ///
     /// let mut vec = MyVec::new();
     /// vec.push(1);
@@ -52,7 +82,7 @@ impl<T> MyVec<T> {
     ///
     /// # Example
     /// ```
-    /// use myvec::MyVec;
+    /// use mycollections::MyVec;
     ///
     /// let mut vec = MyVec::new();
     /// vec.push(1);
@@ -70,7 +100,7 @@ impl<T> MyVec<T> {
         assert!(index <= self.len);
         self.realloc_if_necessary();
         let src = unsafe { self.ptr.as_ptr().add(index) };
-        let dst = unsafe { self.ptr.as_ptr().add(index + 1) };
+        let dst = unsafe { src.add(1) };
         unsafe {
             std::ptr::copy(src, dst, self.len - index);
         }
@@ -85,7 +115,7 @@ impl<T> MyVec<T> {
     ///
     /// # Example
     /// ```
-    /// use myvec::MyVec;
+    /// use mycollections::MyVec;
     ///
     /// let mut vec = MyVec::new();
     /// vec.push(1);
@@ -108,7 +138,7 @@ impl<T> MyVec<T> {
     ///
     /// # Example
     /// ```
-    /// use myvec::MyVec;
+    /// use mycollections::MyVec;
     ///
     /// let mut vec = MyVec::from_iter(0..5);
     /// assert_eq!(vec.remove(2), 2);
@@ -132,7 +162,7 @@ impl<T> MyVec<T> {
     /// Returns the length of the `MyVec`
     /// # Example
     /// ```
-    /// use myvec::MyVec;
+    /// use mycollections::MyVec;
     ///
     /// let mut vec = MyVec::new();
     /// vec.push(1);
@@ -149,12 +179,12 @@ impl<T> MyVec<T> {
     /// Returns the capacity of the `MyVec`
     /// # Example
     /// ```
-    /// use myvec::MyVec;
+    /// use mycollections::MyVec;
     ///
     /// let mut vec = MyVec::new();
     /// assert_eq!(vec.capacity(), 0);
-    /// assert_eq!(vec, []);
     /// vec.push(1);
+    /// assert_eq!(vec.capacity(), 2);
     /// vec.push(2);
     /// assert_eq!(vec.capacity(), 2);
     /// vec.push(3);
@@ -202,7 +232,7 @@ impl<T> MyVec<T> {
     }
     fn realloc_if_necessary(&mut self) {
         if self.capacity == self.len {
-            self.realloc_with_capacity(1.max(self.capacity * 2))
+            self.realloc_with_capacity(2.max(self.capacity * 2))
         }
     }
     /// Reallocs `MyVec` with a new capacity.
@@ -210,6 +240,11 @@ impl<T> MyVec<T> {
     /// If the current capacity is 0, an `alloc` is performed instead.
     fn realloc_with_capacity(&mut self, capacity: usize) {
         let new_size = capacity * std::mem::size_of::<T>();
+        // If the new size is 0, do nothing.
+        // Avoids problems with ZSTs.
+        if new_size == 0 {
+            return;
+        }
 
         // SAFETY: Size and alignment are correct
         let alloc = unsafe {
@@ -348,7 +383,7 @@ where
 ///
 /// # Example
 /// ```
-/// use myvec::MyVec;
+/// use mycollections::MyVec;
 ///
 /// let vec = MyVec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
@@ -368,7 +403,7 @@ pub struct IntoIter<T> {
 ///
 /// # Example
 /// ```
-/// use myvec::MyVec;
+/// use mycollections::MyVec;
 ///
 /// let vec = MyVec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
@@ -387,7 +422,7 @@ pub struct Iter<'a, T> {
 ///
 /// # Example
 /// ```
-/// use myvec::MyVec;
+/// use mycollections::MyVec;
 ///
 /// let mut vec = MyVec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
