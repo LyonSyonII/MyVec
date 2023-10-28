@@ -19,6 +19,12 @@ impl<T> MyVec<T> {
             ptr: std::ptr::NonNull::dangling(),
         }
     }
+    /// Reserves capacity for at least `additional` more elements to be inserted in the `MyVec`.
+    pub fn reserve(&mut self, additional: usize) {
+        if self.capacity < self.len + additional {
+            self.realloc_with_capacity(self.len + additional)
+        }
+    }
     /// Adds a new element to the `MyVec`
     /// # Example
     /// ```
@@ -177,11 +183,6 @@ impl<T> MyVec<T> {
             None
         }
     }
-    pub fn reserve(&mut self, additional: usize) {
-        if self.capacity < self.len + additional {
-            self.realloc_with_capacity(self.len + additional)
-        }
-    }
     /// Returns the layout for the current allocation.
     fn layout(&self) -> core::alloc::Layout {
         unsafe {
@@ -326,16 +327,105 @@ where
     }
 }
 
+impl<T> Clone for MyVec<T>
+where
+    T: Clone {
+        fn clone(&self) -> Self {
+            MyVec::from_iter(self.as_ref().iter().cloned())
+        }
+    }
 
-struct IntoIter<'a, T> {
+
+/// An iterator over the elements of a `MyVec`.
+/// 
+/// # Example
+/// ```
+/// use myvec::MyVec;
+/// 
+/// let vec = MyVec::from_iter(0..=2);
+/// assert_eq!(vec, [0, 1, 2]);
+/// let mut iter = vec.into_iter();
+/// assert_eq!(iter.next(), Some(0));
+/// assert_eq!(iter.next(), Some(1));
+/// assert_eq!(iter.next(), Some(2));
+/// assert_eq!(iter.next(), None);
+/// ```
+#[derive(Clone)]
+pub struct IntoIter<T> {
+    vec: MyVec<T>,
+    index: usize,
+}
+
+/// An iterator over references of the elements of a `MyVec`.
+/// 
+/// # Example
+/// ```
+/// use myvec::MyVec;
+/// 
+/// let vec = MyVec::from_iter(0..=2);
+/// assert_eq!(vec, [0, 1, 2]);
+/// let mut iter = vec.iter();
+/// assert_eq!(iter.next(), Some(&0));
+/// assert_eq!(iter.next(), Some(&1));
+/// assert_eq!(iter.next(), Some(&2));
+/// assert_eq!(iter.next(), None);
+/// ```
+pub struct Iter<'a, T> {
     vec: &'a MyVec<T>,
     index: usize,
 }
 
-impl<'a, T> Iterator for IntoIter<'a, T> {
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.vec.len {
+            return None;
+        }
+        let ptr = unsafe { self.vec.ptr.as_ptr().add(self.index) };
+        self.index += 1;
+        unsafe { Some(ptr.read()) }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.vec.len - self.index;
+        (remaining, Some(remaining))
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
     fn next(&mut self) -> Option<Self::Item> {
         self.index += 1;
         self.vec.get(self.index - 1)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.vec.len - self.index;
+        (remaining, Some(remaining))
+    }
+}
+
+impl<T> ExactSizeIterator for IntoIter<T> {}
+impl<T> ExactSizeIterator for Iter<'_, T> {}
+
+impl<T> IntoIterator for MyVec<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            vec: self,
+            index: 0,
+        }
+    }
+}
+
+impl <'a, T> IntoIterator for &'a MyVec<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        Iter {
+            vec: self,
+            index: 0,
+        }
     }
 }
