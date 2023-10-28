@@ -444,6 +444,11 @@ impl<'a, T> Iterator for IterMut<'a, T> {
         // SAFETY: pointer is valid and points to the MyVec allocation
         unsafe { Some(&mut *ptr) }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.vec.len - self.index;
+        (remaining, Some(remaining))
+    }
 }
 
 impl<T> ExactSizeIterator for IntoIter<T> {}
