@@ -183,6 +183,14 @@ impl<T> MyVec<T> {
             None
         }
     }
+    /// Returns an iterator over references of the elements in the `MyVec`.
+    pub fn iter(&self) -> Iter<'_, T> {
+        self.into_iter()
+    }
+    /// Returns an iterator over mutable references of the elements in the `MyVec`.
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        self.into_iter()
+    }
     /// Returns the layout for the current allocation.
     fn layout(&self) -> core::alloc::Layout {
         unsafe {
@@ -375,6 +383,24 @@ pub struct Iter<'a, T> {
     index: usize,
 }
 
+/// An iterator over mutable references of the elements of a `MyVec`.
+/// 
+/// # Example
+/// ```
+/// use myvec::MyVec;
+/// 
+/// let mut vec = MyVec::from_iter(0..=2);
+/// assert_eq!(vec, [0, 1, 2]);
+/// for item in vec.iter_mut() {
+///     *item *= 2;
+/// }
+/// assert_eq!(vec, [0, 2, 4]);
+/// ```
+pub struct IterMut<'a, T> {
+    vec: &'a mut MyVec<T>,
+    index: usize,
+}
+
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
@@ -405,6 +431,22 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.vec.len {
+            return None;
+        }
+        // SAFETY: index < vec.len
+        let ptr = unsafe { self.vec.ptr.as_ptr().add(self.index) };
+        self.index += 1;
+        // SAFETY: pointer is valid and points to the MyVec allocation
+        unsafe { Some(&mut *ptr) }
+    }
+    
+}
+
 impl<T> ExactSizeIterator for IntoIter<T> {}
 impl<T> ExactSizeIterator for Iter<'_, T> {}
 
@@ -419,13 +461,24 @@ impl<T> IntoIterator for MyVec<T> {
     }
 }
 
-impl <'a, T> IntoIterator for &'a MyVec<T> {
+impl<'a, T> IntoIterator for &'a MyVec<T> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
         Iter {
             vec: self,
             index: 0,
+        }
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut MyVec<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        IterMut {
+            vec: self,
+            index: 0
         }
     }
 }
