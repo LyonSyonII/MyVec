@@ -32,7 +32,6 @@ impl<T> MyVec<T> {
     /// assert_eq!(vec[1], 2);
     /// assert_eq!(vec, [1, 2]);
     /// ```
-    ///
     pub fn push(&mut self, value: T) {
         self.realloc_if_necessary();
         unsafe {
@@ -41,14 +40,14 @@ impl<T> MyVec<T> {
         self.len += 1;
     }
     /// Inserts a new element at the given index, shifting all elements after it to the right.
-    /// 
+    ///
     /// # Panics
     /// Panics if the index is out of bounds.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use myvec::MyVec;
-    /// 
+    ///
     /// let mut vec = MyVec::new();
     /// vec.push(1);
     /// vec.push(3);
@@ -66,8 +65,12 @@ impl<T> MyVec<T> {
         self.realloc_if_necessary();
         let src = unsafe { self.ptr.as_ptr().add(index) };
         let dst = unsafe { self.ptr.as_ptr().add(index + 1) };
-        unsafe { std::ptr::copy(src, dst, self.len - index); }
-        unsafe { src.write(value); }
+        unsafe {
+            std::ptr::copy(src, dst, self.len - index);
+        }
+        unsafe {
+            src.write(value);
+        }
         self.len += 1;
     }
     /// Removes the last element from the `MyVec` and returns it.
@@ -93,10 +96,10 @@ impl<T> MyVec<T> {
         unsafe { Some(self.ptr.as_ptr().add(self.len).read()) }
     }
     /// Removes the element at the given index and returns it.
-    /// 
+    ///
     /// # Panics
     /// Panics if the index is out of bounds.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use myvec::MyVec;
@@ -115,7 +118,9 @@ impl<T> MyVec<T> {
         let src = unsafe { dst.add(1) };
         let ret = unsafe { dst.read() };
         self.len -= 1;
-        unsafe { std::ptr::copy(src, dst, self.len - index); }
+        unsafe {
+            std::ptr::copy(src, dst, self.len - index);
+        }
         ret
     }
     /// Returns the length of the `MyVec`
@@ -277,12 +282,13 @@ where
     }
 }
 
-impl<T> core::ops::Index<usize> for MyVec<T> {
-    type Output = T;
-    fn index(&self, index: usize) -> &Self::Output {
-        // SAFETY
-        assert!(index < self.len);
-        unsafe { self.ptr.as_ptr().add(index).as_ref().unwrap_unchecked() }
+impl<T, Idx> core::ops::Index<Idx> for MyVec<T>
+where
+    Idx: core::slice::SliceIndex<[T]>,
+{
+    type Output = <Idx as core::slice::SliceIndex<[T]>>::Output;
+    fn index(&self, index: Idx) -> &Self::Output {
+        self.as_ref().index(index)
     }
 }
 
@@ -292,5 +298,23 @@ where
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_list().entries(self.as_ref().iter()).finish()
+    }
+}
+
+/// Translates any range into a start and end indices (exclusive), such that `start < end`.
+/// Does not check if the range is in bounds.
+fn translate_range(range: impl core::ops::RangeBounds<usize>, len: usize) -> (usize, usize) {
+    match (range.start_bound(), range.end_bound()) {
+        (core::ops::Bound::Included(&start), core::ops::Bound::Included(&end)) => (start, end + 1),
+        (core::ops::Bound::Included(&start), core::ops::Bound::Excluded(&end)) => (start, end),
+        (core::ops::Bound::Included(&start), core::ops::Bound::Unbounded) => (start, len),
+        (core::ops::Bound::Excluded(&start), core::ops::Bound::Included(&end)) => {
+            (start + 1, end + 1)
+        }
+        (core::ops::Bound::Excluded(&start), core::ops::Bound::Excluded(&end)) => (start + 1, end),
+        (core::ops::Bound::Excluded(&start), core::ops::Bound::Unbounded) => (start + 1, len),
+        (core::ops::Bound::Unbounded, core::ops::Bound::Included(&end)) => (0, end + 1),
+        (core::ops::Bound::Unbounded, core::ops::Bound::Excluded(&end)) => (0, end),
+        (core::ops::Bound::Unbounded, core::ops::Bound::Unbounded) => (0, len),
     }
 }
