@@ -453,6 +453,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
 
 impl<T> ExactSizeIterator for IntoIter<T> {}
 impl<T> ExactSizeIterator for Iter<'_, T> {}
+impl<T> ExactSizeIterator for IterMut<'_, T> {}
 
 impl<T> IntoIterator for MyVec<T> {
     type Item = T;
