@@ -161,6 +161,22 @@ impl<T> MyVec<T> {
     pub const fn capacity(&self) -> usize {
         self.capacity
     }
+    /// Returns a reference to the element at the given index or `None` if the index is out of bounds.
+    pub fn get(&self, index: usize) -> Option<&T> {
+        if index < self.len {
+            Some(&self[index])
+        } else {
+            None
+        }
+    }
+    /// Returns a mutable reference to the element at the given index or `None` if the index is out of bounds.
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        if index < self.len {
+            Some(&mut self[index])
+        } else {
+            None
+        }
+    }
     pub fn reserve(&mut self, additional: usize) {
         if self.capacity < self.len + additional {
             self.realloc_with_capacity(self.len + additional)
@@ -292,6 +308,15 @@ where
     }
 }
 
+impl<T, Idx> core::ops::IndexMut<Idx> for MyVec<T>
+where
+    Idx: core::slice::SliceIndex<[T]>,
+{
+    fn index_mut(&mut self, index: Idx) -> &mut Self::Output {
+        self.as_mut().index_mut(index)
+    }
+}
+
 impl<T> core::fmt::Debug for MyVec<T>
 where
     T: core::fmt::Debug,
@@ -301,20 +326,16 @@ where
     }
 }
 
-/// Translates any range into a start and end indices (exclusive), such that `start < end`.
-/// Does not check if the range is in bounds.
-fn translate_range(range: impl core::ops::RangeBounds<usize>, len: usize) -> (usize, usize) {
-    match (range.start_bound(), range.end_bound()) {
-        (core::ops::Bound::Included(&start), core::ops::Bound::Included(&end)) => (start, end + 1),
-        (core::ops::Bound::Included(&start), core::ops::Bound::Excluded(&end)) => (start, end),
-        (core::ops::Bound::Included(&start), core::ops::Bound::Unbounded) => (start, len),
-        (core::ops::Bound::Excluded(&start), core::ops::Bound::Included(&end)) => {
-            (start + 1, end + 1)
-        }
-        (core::ops::Bound::Excluded(&start), core::ops::Bound::Excluded(&end)) => (start + 1, end),
-        (core::ops::Bound::Excluded(&start), core::ops::Bound::Unbounded) => (start + 1, len),
-        (core::ops::Bound::Unbounded, core::ops::Bound::Included(&end)) => (0, end + 1),
-        (core::ops::Bound::Unbounded, core::ops::Bound::Excluded(&end)) => (0, end),
-        (core::ops::Bound::Unbounded, core::ops::Bound::Unbounded) => (0, len),
+
+struct IntoIter<'a, T> {
+    vec: &'a MyVec<T>,
+    index: usize,
+}
+
+impl<'a, T> Iterator for IntoIter<'a, T> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.index += 1;
+        self.vec.get(self.index - 1)
     }
 }
