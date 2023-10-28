@@ -1,5 +1,3 @@
-My own implementation of the `Vec` data structure in Rust.
+My own implementations of the data structures in the Rust `std::collections` module.
 
-Uses some unsafe code, but it passes all tests with `cargo miri test`.
-
-All methods and structs are fully documented.
+All methods and structs are fully documented (enforced by `#[deny(missing_docs)]`).
