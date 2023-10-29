@@ -159,6 +159,52 @@ impl<T> MyVec<T> {
         }
         ret
     }
+    /// Returns an iterator that removes the elements in `range and yields them.
+    /// 
+    /// If the iterator is dropped, the remaining elements are removed.
+    /// 
+    /// # Panics
+    /// Panics if the range is out of bounds.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::MyVec;
+    /// 
+    /// let mut vec = MyVec::from_iter(0..=4);
+    /// let mut iter = vec.drain(1..=3);
+    /// assert_eq!(iter.next(), Some(1));
+    /// assert_eq!(iter.next(), Some(2));
+    /// assert_eq!(iter.next(), Some(3));
+    /// assert_eq!(iter.next(), None);
+    /// 
+    /// drop(iter); // Drop the iterator to recover the mutable reference
+    /// 
+    /// assert_eq!(vec, [0, 4]);
+    /// 
+    /// let mut iter = vec.drain(0..0);
+    /// assert_eq!(iter.next(), None);
+    /// drop(iter);
+    /// 
+    /// vec.drain(2..2);
+    /// ```
+    pub fn drain(&mut self, range: impl core::ops::RangeBounds<usize>) -> Drain<T>{
+        let start = match range.start_bound() {
+            core::ops::Bound::Included(&s) => s,
+            core::ops::Bound::Excluded(&s) => s + 1,
+            core::ops::Bound::Unbounded => 0,
+        };
+        let end = match range.end_bound() {
+            core::ops::Bound::Included(&e) => e + 1,
+            core::ops::Bound::Excluded(&e) => e,
+            core::ops::Bound::Unbounded => self.len,
+        };
+        assert!(start <= end && end <= self.len);
+        Drain {
+            vec: self,
+            start,
+            elements: end - start,
+        }
+    }
     /// Returns the length of the `MyVec`
     /// # Example
     /// ```
@@ -436,6 +482,17 @@ pub struct IterMut<'a, T> {
     index: usize,
 }
 
+/// An iterator over the elements of a `MyVec`.
+/// 
+/// Each time `next` is called, the iterator removes the element from the `MyVec`.
+/// 
+/// This iterator should be created with the [`MyVec::drain`] method.
+pub struct Drain<'a, T> {
+    vec: &'a mut MyVec<T>,
+    start: usize,
+    elements: usize,
+}
+
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
@@ -486,9 +543,24 @@ impl<'a, T> Iterator for IterMut<'a, T> {
     }
 }
 
+impl<'a, T> Iterator for Drain<'a, T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.elements == 0 {
+            return None
+        }
+        self.elements -= 1;
+        Some(self.vec.remove(self.start))
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.elements, Some(self.elements))
+    }
+}
+
 impl<T> ExactSizeIterator for IntoIter<T> {}
 impl<T> ExactSizeIterator for Iter<'_, T> {}
 impl<T> ExactSizeIterator for IterMut<'_, T> {}
+impl<T> ExactSizeIterator for Drain<'_, T> {}
 
 impl<T> IntoIterator for MyVec<T> {
     type Item = T;
@@ -520,5 +592,11 @@ impl<'a, T> IntoIterator for &'a mut MyVec<T> {
             vec: self,
             index: 0,
         }
+    }
+}
+
+impl<T> Drop for Drain<'_, T> {
+    fn drop(&mut self) {
+        for _ in self {}
     }
 }
