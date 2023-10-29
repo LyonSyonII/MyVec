@@ -7,5 +7,7 @@
 //! Currently implemented:
 //! - `Vec`
 
-mod myvec;
-pub use myvec::*;
+mod vec;
+mod linked_list;
+pub use vec::*;
+pub use linked_list::*;

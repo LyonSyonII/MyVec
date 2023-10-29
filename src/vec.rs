@@ -1,7 +1,7 @@
-/// My own implementation of `Vec`.
+/// My implementation of `Vec`.
 /// 
-/// Implemented methods should behave exactly like it.
-pub struct MyVec<T> {
+/// Implemented methods should behave exactly like the original.
+pub struct Vec<T> {
     len: usize,
     capacity: usize,
     ptr: core::ptr::NonNull<T>,
@@ -9,33 +9,33 @@ pub struct MyVec<T> {
     _marker: core::marker::PhantomData<T>, 
 }
 
-impl<T> MyVec<T> {
-    /// Creates a new `MyVec`
+impl<T> Vec<T> {
+    /// Creates a new `Vec`
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     ///
-    /// let mut vec: MyVec<i32> = MyVec::new();
+    /// let mut vec: Vec<i32> = Vec::new();
     /// ```
-    pub fn new() -> MyVec<T> {
-        MyVec {
+    pub fn new() -> Vec<T> {
+        Vec {
             len: 0,
             capacity: 0,
             ptr: std::ptr::NonNull::dangling(),
             _marker: core::marker::PhantomData,
         }
     }
-    /// Reserves capacity for at least `additional` more elements to be inserted in the `MyVec`.
+    /// Reserves capacity for at least `additional` more elements to be inserted in the `Vec`.
     /// 
     /// New capacity will be the next power of two large enough to hold the additional elements.
     /// 
-    /// If `T` is a ZST, the `MyVec`'s capacity is always 0, so this will do nothing.
+    /// If `T` is a ZST, the `Vec`'s capacity is always 0, so this will do nothing.
     /// 
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     /// 
-    /// let mut vec = MyVec::<u8>::new();
+    /// let mut vec = Vec::<u8>::new();
     /// vec.reserve(6);
     /// assert_eq!(vec.capacity(), 8);
     /// 
@@ -54,12 +54,12 @@ impl<T> MyVec<T> {
             self.realloc_with_capacity(min_capacity.next_power_of_two())
         }
     }
-    /// Adds a new element to the `MyVec`
+    /// Adds a new element to the `Vec`
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     ///
-    /// let mut vec = MyVec::new();
+    /// let mut vec = Vec::new();
     /// vec.push(1);
     /// vec.push(2);
     /// assert_eq!(vec.len(), 2);
@@ -81,9 +81,9 @@ impl<T> MyVec<T> {
     ///
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     ///
-    /// let mut vec = MyVec::new();
+    /// let mut vec = Vec::new();
     /// vec.push(1);
     /// vec.push(3);
     /// vec.insert(1, 2);
@@ -108,15 +108,15 @@ impl<T> MyVec<T> {
         }
         self.len += 1;
     }
-    /// Removes the last element from the `MyVec` and returns it.
+    /// Removes the last element from the `Vec` and returns it.
     ///
-    /// If the `MyVec` is empty, `None` is returned
+    /// If the `Vec` is empty, `None` is returned
     ///
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     ///
-    /// let mut vec = MyVec::new();
+    /// let mut vec = Vec::new();
     /// vec.push(1);
     /// vec.push(2);
     /// assert_eq!(vec.pop(), Some(2));
@@ -137,9 +137,9 @@ impl<T> MyVec<T> {
     ///
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     ///
-    /// let mut vec = MyVec::from_iter(0..5);
+    /// let mut vec = Vec::from_iter(0..5);
     /// assert_eq!(vec.remove(2), 2);
     /// assert_eq!(vec, [0, 1, 3, 4]);
     /// assert_eq!(vec.remove(0), 0);
@@ -167,9 +167,9 @@ impl<T> MyVec<T> {
     /// 
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     /// 
-    /// let mut vec = MyVec::from_iter(0..=4);
+    /// let mut vec = Vec::from_iter(0..=4);
     /// let mut iter = vec.drain(1..=3);
     /// assert_eq!(iter.next(), Some(1));
     /// assert_eq!(iter.next(), Some(2));
@@ -206,12 +206,12 @@ impl<T> MyVec<T> {
             elements: end - start,
         }
     }
-    /// Returns the length of the `MyVec`
+    /// Returns the length of the `Vec`
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     ///
-    /// let mut vec = MyVec::new();
+    /// let mut vec = Vec::new();
     /// vec.push(1);
     /// vec.push(2);
     /// assert_eq!(vec.len(), 2);
@@ -219,16 +219,16 @@ impl<T> MyVec<T> {
     pub const fn len(&self) -> usize {
         self.len
     }
-    /// Returns `true` if the `MyVec` is empty
+    /// Returns `true` if the `Vec` is empty
     pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
-    /// Returns the capacity of the `MyVec`
+    /// Returns the capacity of the `Vec`
     /// # Example
     /// ```
-    /// use mycollections::MyVec;
+    /// use mycollections::Vec;
     ///
-    /// let mut vec = MyVec::new();
+    /// let mut vec = Vec::new();
     /// assert_eq!(vec.capacity(), 0);
     /// vec.push(1);
     /// assert_eq!(vec.capacity(), 2);
@@ -260,11 +260,11 @@ impl<T> MyVec<T> {
             None
         }
     }
-    /// Returns an iterator over references of the elements in the `MyVec`.
+    /// Returns an iterator over references of the elements in the `Vec`.
     pub fn iter(&self) -> Iter<'_, T> {
         self.into_iter()
     }
-    /// Returns an iterator over mutable references of the elements in the `MyVec`.
+    /// Returns an iterator over mutable references of the elements in the `Vec`.
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         self.into_iter()
     }
@@ -282,7 +282,7 @@ impl<T> MyVec<T> {
             self.realloc_with_capacity(2.max(self.capacity * 2))
         }
     }
-    /// Reallocs `MyVec` with a new capacity.
+    /// Reallocs `Vec` with a new capacity.
     ///
     /// If the current capacity is 0, an `alloc` is performed instead.
     fn realloc_with_capacity(&mut self, capacity: usize) {
@@ -316,13 +316,13 @@ impl<T> MyVec<T> {
     }
 }
 
-impl<T> Default for MyVec<T> {
+impl<T> Default for Vec<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> Drop for MyVec<T> {
+impl<T> Drop for Vec<T> {
     fn drop(&mut self) {
         // SAFETY: Pointer is not null if capacity > 0
         if self.capacity > 0 {
@@ -333,7 +333,7 @@ impl<T> Drop for MyVec<T> {
     }
 }
 
-impl<T> Extend<T> for MyVec<T> {
+impl<T> Extend<T> for Vec<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let iter = iter.into_iter();
         {
@@ -347,7 +347,7 @@ impl<T> Extend<T> for MyVec<T> {
     }
 }
 
-impl<T> FromIterator<T> for MyVec<T> {
+impl<T> FromIterator<T> for Vec<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut vec = Self::new();
         vec.extend(iter);
@@ -355,21 +355,21 @@ impl<T> FromIterator<T> for MyVec<T> {
     }
 }
 
-impl<T> AsRef<[T]> for MyVec<T> {
+impl<T> AsRef<[T]> for Vec<T> {
     fn as_ref(&self) -> &[T] {
         // SAFETY: Pointer is usable even if len == 0, NonNull::dangling() is a valid pointer for empty slices
         unsafe { std::slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
     }
 }
 
-impl<T> AsMut<[T]> for MyVec<T> {
+impl<T> AsMut<[T]> for Vec<T> {
     fn as_mut(&mut self) -> &mut [T] {
         // SAFETY: Pointer is usable even if len == 0, NonNull::dangling() is a valid pointer for empty slices
         unsafe { std::slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
     }
 }
 
-impl<T, S> PartialEq<S> for MyVec<T>
+impl<T, S> PartialEq<S> for Vec<T>
 where
     S: AsRef<[T]>,
     T: PartialEq,
@@ -379,7 +379,7 @@ where
     }
 }
 
-impl<T, S> PartialOrd<S> for MyVec<T>
+impl<T, S> PartialOrd<S> for Vec<T>
 where
     S: AsRef<[T]>,
     T: PartialOrd,
@@ -389,7 +389,7 @@ where
     }
 }
 
-impl<T, Idx> core::ops::Index<Idx> for MyVec<T>
+impl<T, Idx> core::ops::Index<Idx> for Vec<T>
 where
     Idx: core::slice::SliceIndex<[T]>,
 {
@@ -399,7 +399,7 @@ where
     }
 }
 
-impl<T, Idx> core::ops::IndexMut<Idx> for MyVec<T>
+impl<T, Idx> core::ops::IndexMut<Idx> for Vec<T>
 where
     Idx: core::slice::SliceIndex<[T]>,
 {
@@ -408,7 +408,7 @@ where
     }
 }
 
-impl<T> core::fmt::Debug for MyVec<T>
+impl<T> core::fmt::Debug for Vec<T>
 where
     T: core::fmt::Debug,
 {
@@ -417,22 +417,22 @@ where
     }
 }
 
-impl<T> Clone for MyVec<T>
+impl<T> Clone for Vec<T>
 where
     T: Clone,
 {
     fn clone(&self) -> Self {
-        MyVec::from_iter(self.as_ref().iter().cloned())
+        Vec::from_iter(self.as_ref().iter().cloned())
     }
 }
 
-/// An iterator over the elements of a `MyVec`.
+/// An iterator over the elements of a `Vec`.
 ///
 /// # Example
 /// ```
-/// use mycollections::MyVec;
+/// use mycollections::Vec;
 ///
-/// let vec = MyVec::from_iter(0..=2);
+/// let vec = Vec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
 /// let mut iter = vec.into_iter();
 /// assert_eq!(iter.next(), Some(0));
@@ -442,17 +442,17 @@ where
 /// ```
 #[derive(Clone)]
 pub struct IntoIter<T> {
-    vec: MyVec<T>,
+    vec: Vec<T>,
     index: usize,
 }
 
-/// An iterator over references of the elements of a `MyVec`.
+/// An iterator over references of the elements of a `Vec`.
 ///
 /// # Example
 /// ```
-/// use mycollections::MyVec;
+/// use mycollections::Vec;
 ///
-/// let vec = MyVec::from_iter(0..=2);
+/// let vec = Vec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
 /// let mut iter = vec.iter();
 /// assert_eq!(iter.next(), Some(&0));
@@ -461,17 +461,17 @@ pub struct IntoIter<T> {
 /// assert_eq!(iter.next(), None);
 /// ```
 pub struct Iter<'a, T> {
-    vec: &'a MyVec<T>,
+    vec: &'a Vec<T>,
     index: usize,
 }
 
-/// An iterator over mutable references of the elements of a `MyVec`.
+/// An iterator over mutable references of the elements of a `Vec`.
 ///
 /// # Example
 /// ```
-/// use mycollections::MyVec;
+/// use mycollections::Vec;
 ///
-/// let mut vec = MyVec::from_iter(0..=2);
+/// let mut vec = Vec::from_iter(0..=2);
 /// assert_eq!(vec, [0, 1, 2]);
 /// for item in vec.iter_mut() {
 ///     *item *= 2;
@@ -479,17 +479,17 @@ pub struct Iter<'a, T> {
 /// assert_eq!(vec, [0, 2, 4]);
 /// ```
 pub struct IterMut<'a, T> {
-    vec: &'a mut MyVec<T>,
+    vec: &'a mut Vec<T>,
     index: usize,
 }
 
-/// An iterator over the elements of a `MyVec`.
+/// An iterator over the elements of a `Vec`.
 /// 
-/// Each time `next` is called, the iterator removes the element from the `MyVec`.
+/// Each time `next` is called, the iterator removes the element from the `Vec`.
 /// 
-/// This iterator should be created with the [`MyVec::drain`] method.
+/// This iterator should be created with the [`Vec::drain`] method.
 pub struct Drain<'a, T> {
-    vec: &'a mut MyVec<T>,
+    vec: &'a mut Vec<T>,
     start: usize,
     elements: usize,
 }
@@ -534,7 +534,7 @@ impl<'a, T> Iterator for IterMut<'a, T> {
         // SAFETY: index < vec.len
         let ptr = unsafe { self.vec.ptr.as_ptr().add(self.index) };
         self.index += 1;
-        // SAFETY: pointer is valid and points to the MyVec allocation
+        // SAFETY: pointer is valid and points to the Vec allocation
         unsafe { Some(&mut *ptr) }
     }
 
@@ -563,7 +563,7 @@ impl<T> ExactSizeIterator for Iter<'_, T> {}
 impl<T> ExactSizeIterator for IterMut<'_, T> {}
 impl<T> ExactSizeIterator for Drain<'_, T> {}
 
-impl<T> IntoIterator for MyVec<T> {
+impl<T> IntoIterator for Vec<T> {
     type Item = T;
     type IntoIter = IntoIter<T>;
     fn into_iter(self) -> Self::IntoIter {
@@ -574,7 +574,7 @@ impl<T> IntoIterator for MyVec<T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a MyVec<T> {
+impl<'a, T> IntoIterator for &'a Vec<T> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
@@ -585,7 +585,7 @@ impl<'a, T> IntoIterator for &'a MyVec<T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a mut MyVec<T> {
+impl<'a, T> IntoIterator for &'a mut Vec<T> {
     type Item = &'a mut T;
     type IntoIter = IterMut<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
