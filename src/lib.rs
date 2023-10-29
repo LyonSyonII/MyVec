@@ -177,15 +177,17 @@ impl<T> MyVec<T> {
     /// assert_eq!(iter.next(), Some(3));
     /// assert_eq!(iter.next(), None);
     /// 
-    /// drop(iter); // Drop the iterator to recover the mutable reference
-    /// 
+    /// // Drop the iterator to recover the mutable reference
+    /// drop(iter);
     /// assert_eq!(vec, [0, 4]);
     /// 
+    /// // Empty ranges return no elements
     /// let mut iter = vec.drain(0..0);
     /// assert_eq!(iter.next(), None);
     /// drop(iter);
     /// 
-    /// vec.drain(2..2);
+    /// // Empty ranges will not panic if `end` <= `len`
+    /// vec.drain(2..2); 
     /// ```
     pub fn drain(&mut self, range: impl core::ops::RangeBounds<usize>) -> Drain<T>{
         let start = match range.start_bound() {
