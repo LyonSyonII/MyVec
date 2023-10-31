@@ -1,5 +1,5 @@
 //! My implementation of Rust's [`LinkedList`](std::collections::LinkedList).
-//! 
+//!
 //! Implemented methods should behave exactly like the original.
 
 type NodeBox<T> = core::ptr::NonNull<Node<T>>;
@@ -52,13 +52,13 @@ impl<T> LinkedList<T> {
         self.len += 1;
     }
     /// Pops the last element from the `LinkedList` and returns it.
-    /// 
+    ///
     /// If the `LinkedList` is empty, `None` is returned.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::LinkedList;
-    /// 
+    ///
     /// let mut list = LinkedList::from_iter(0..=2);
     /// assert_eq!(list.pop_back(), Some(2));
     /// assert_eq!(list.pop_back(), Some(1));
@@ -86,11 +86,11 @@ impl<T> LinkedList<T> {
         }
     }
     /// Returns an iterator over references of the elements in the `LinkedList`.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::LinkedList;
-    /// 
+    ///
     /// let mut list = LinkedList::from_iter(0..=2);
     /// let mut iter = list.iter();
     /// assert_eq!(iter.next(), Some(&0));
@@ -102,11 +102,11 @@ impl<T> LinkedList<T> {
         self.into_iter()
     }
     /// Returns the lenght of the list.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::LinkedList;
-    /// 
+    ///
     /// let list = LinkedList::from_iter(0..=2);
     /// assert_eq!(list.len(), 3);
     /// ```
@@ -114,11 +114,11 @@ impl<T> LinkedList<T> {
         self.len
     }
     /// Returns `true` if the list is empty.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::LinkedList;
-    /// 
+    ///
     /// let mut list = LinkedList::new();
     /// assert_eq!(list.is_empty(), true);
     /// list.push(1);
@@ -133,11 +133,7 @@ impl<T> Node<T> {
     /// Creates and allocates a new `Node<T>` with the given `value`.
     fn new(value: T, prev: Option<NodeBox<T>>, next: Option<NodeBox<T>>) -> NodeBox<T> {
         let layout = core::alloc::Layout::new::<Node<T>>();
-        let node = Node {
-            value,
-            prev,
-            next,
-        };
+        let node = Node { value, prev, next };
         // SAFETY: Size and alignment are correct
         let alloc = unsafe { std::alloc::alloc(layout) } as *mut Node<T>;
         if alloc.is_null() {
@@ -159,7 +155,7 @@ impl<T> Node<T> {
                 prev.next = Some(alloc);
                 next.prev = Some(alloc);
             }
-            (None, None) => {},
+            (None, None) => {}
         }
         alloc
     }
@@ -169,11 +165,11 @@ impl<T> Node<T> {
         match (prev, next) {
             (None, Some(next)) => next.prev = None,
             (Some(prev), None) => prev.next = None,
-            (Some(prev), Some(next)) => { 
+            (Some(prev), Some(next)) => {
                 prev.next = self.next;
                 next.prev = self.prev;
-            },
-            (None, None) => {},
+            }
+            (None, None) => {}
         }
         self.value
     }
@@ -221,17 +217,22 @@ impl<T> Drop for LinkedList<T> {
         while let Some(headptr) = self.head {
             let head = unsafe { headptr.as_ref() };
             self.head = head.next;
-            unsafe { std::alloc::dealloc(headptr.as_ptr() as *mut u8, core::alloc::Layout::new::<Node<T>>()) };
+            unsafe {
+                std::alloc::dealloc(
+                    headptr.as_ptr() as *mut u8,
+                    core::alloc::Layout::new::<Node<T>>(),
+                )
+            };
         }
     }
 }
 
 /// An iterator over references of the elements in the `LinkedList`.
-/// 
+///
 /// # Example
 /// ```
 /// use mycollections::LinkedList;
-/// 
+///
 /// let mut list = LinkedList::from_iter(0..=2);
 /// let mut iter = list.iter();
 /// assert_eq!(iter.next(), Some(&0));
@@ -282,6 +283,15 @@ impl<T> FromIterator<T> for LinkedList<T> {
     }
 }
 
+impl<T> PartialEq for LinkedList<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.iter().eq(other.iter())
+    }
+}
+
 impl<T, Slice> PartialEq<Slice> for LinkedList<T>
 where
     T: PartialEq,
@@ -289,5 +299,24 @@ where
 {
     fn eq(&self, other: &Slice) -> bool {
         self.iter().eq(other.as_ref().iter())
+    }
+}
+
+impl<T> PartialOrd for LinkedList<T>
+where
+    T: PartialOrd,
+{
+    fn partial_cmp(&self, other: &Self) -> std::option::Option<std::cmp::Ordering> {
+        self.iter().partial_cmp(other.iter())
+    }
+}
+
+impl<T, Slice> PartialOrd<Slice> for LinkedList<T>
+where
+    T: PartialOrd,
+    Slice: AsRef<[T]>,
+{
+    fn partial_cmp(&self, other: &Slice) -> std::option::Option<std::cmp::Ordering> {
+        self.iter().partial_cmp(other.as_ref().iter())
     }
 }
