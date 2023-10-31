@@ -1,12 +1,16 @@
-/// My implementation of `Vec`.
-/// 
+//! My implementation of Rust's [`Vec`](std::vec::Vec).
+//!
+//! Implemented methods should behave exactly like the original.
+
+/// My implementation of Rust's [`Vec`](std::vec::Vec).
+///
 /// Implemented methods should behave exactly like the original.
 pub struct Vec<T> {
     len: usize,
     capacity: usize,
     ptr: core::ptr::NonNull<T>,
     /// Needed to ensure that we own the data, see [`core::ptr::Unique`]
-    _marker: core::marker::PhantomData<T>, 
+    _marker: core::marker::PhantomData<T>,
 }
 
 impl<T> Vec<T> {
@@ -26,23 +30,23 @@ impl<T> Vec<T> {
         }
     }
     /// Reserves capacity for at least `additional` more elements to be inserted in the `Vec`.
-    /// 
+    ///
     /// New capacity will be the next power of two large enough to hold the additional elements.
-    /// 
+    ///
     /// If `T` is a ZST, the `Vec`'s capacity is always 0, so this will do nothing.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Vec;
-    /// 
+    ///
     /// let mut vec = Vec::<u8>::new();
     /// vec.reserve(6);
     /// assert_eq!(vec.capacity(), 8);
-    /// 
+    ///
     /// // Vec still has len == 0, so 3 elements can be inserted
     /// vec.reserve(3);
     /// assert_eq!(vec.capacity(), 8);
-    /// 
+    ///
     /// // If we insert 8 elements and reserve for 1, the capacity will double as expected
     /// vec.extend(0..8);
     /// assert_eq!(vec.capacity(), 8);
@@ -159,36 +163,36 @@ impl<T> Vec<T> {
         ret
     }
     /// Returns an iterator that removes the elements in `range and yields them.
-    /// 
+    ///
     /// If the iterator is dropped, the remaining elements are removed.
-    /// 
+    ///
     /// # Panics
     /// Panics if the range is out of bounds.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Vec;
-    /// 
+    ///
     /// let mut vec = Vec::from_iter(0..=4);
     /// let mut iter = vec.drain(1..=3);
     /// assert_eq!(iter.next(), Some(1));
     /// assert_eq!(iter.next(), Some(2));
     /// assert_eq!(iter.next(), Some(3));
     /// assert_eq!(iter.next(), None);
-    /// 
+    ///
     /// // Drop the iterator to recover the mutable reference
     /// drop(iter);
     /// assert_eq!(vec, [0, 4]);
-    /// 
+    ///
     /// // Empty ranges return no elements
     /// let mut iter = vec.drain(0..0);
     /// assert_eq!(iter.next(), None);
     /// drop(iter);
-    /// 
+    ///
     /// // Empty ranges will not panic if `end` <= `len`
-    /// vec.drain(2..2); 
+    /// vec.drain(2..2);
     /// ```
-    pub fn drain(&mut self, range: impl core::ops::RangeBounds<usize>) -> Drain<T>{
+    pub fn drain(&mut self, range: impl core::ops::RangeBounds<usize>) -> Drain<T> {
         let start = match range.start_bound() {
             core::ops::Bound::Included(&s) => s,
             core::ops::Bound::Excluded(&s) => s + 1,
@@ -484,9 +488,9 @@ pub struct IterMut<'a, T> {
 }
 
 /// An iterator over the elements of a `Vec`.
-/// 
+///
 /// Each time `next` is called, the iterator removes the element from the `Vec`.
-/// 
+///
 /// This iterator should be created with the [`Vec::drain`] method.
 pub struct Drain<'a, T> {
     vec: &'a mut Vec<T>,
@@ -548,7 +552,7 @@ impl<'a, T> Iterator for Drain<'a, T> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
         if self.elements == 0 {
-            return None
+            return None;
         }
         self.elements -= 1;
         Some(self.vec.remove(self.start))
