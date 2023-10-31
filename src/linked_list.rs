@@ -28,6 +28,9 @@ impl<T> LinkedList<T> {
     /// use mycollections::LinkedList;
     ///
     /// let mut list: LinkedList<i32> = LinkedList::new();
+    /// assert_eq!(list.len(), 0);
+    /// assert_eq!(list.pop_back(), None);
+    /// assert_eq!(list, []);
     /// ```
     pub fn new() -> LinkedList<T> {
         LinkedList {
@@ -97,6 +100,32 @@ impl<T> LinkedList<T> {
     /// ```
     pub fn iter(&self) -> Iter<'_, T> {
         self.into_iter()
+    }
+    /// Returns the lenght of the list.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::LinkedList;
+    /// 
+    /// let list = LinkedList::from_iter(0..=2);
+    /// assert_eq!(list.len(), 3);
+    /// ```
+    pub const fn len(&self) -> usize {
+        self.len
+    }
+    /// Returns `true` if the list is empty.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::LinkedList;
+    /// 
+    /// let mut list = LinkedList::new();
+    /// assert_eq!(list.is_empty(), true);
+    /// list.push(1);
+    /// assert_eq!(list.is_empty(), false);
+    /// ```
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
     }
 }
 
