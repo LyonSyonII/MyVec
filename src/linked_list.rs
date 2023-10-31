@@ -41,7 +41,18 @@ impl<T> LinkedList<T> {
         }
     }
     /// Pushes a new element to the end of the `LinkedList`.
-    pub fn push(&mut self, value: T) {
+    ///
+    /// # Example
+    /// ```
+    /// use mycollections::LinkedList;
+    ///
+    /// let mut list = LinkedList::new();
+    /// list.push(0);
+    /// list.push(1);
+    /// list.push(2);
+    /// assert_eq!(list, [0, 1, 2]);
+    /// ```
+    pub fn push_back(&mut self, value: T) {
         let node = Some(Node::new(value, self.tail, None));
         if self.tail.is_some() {
             self.tail = node;
@@ -78,13 +89,13 @@ impl<T> LinkedList<T> {
         Some(tail.remove())
     }
     /// Removes the first element of the `LinkedList` and returns it.
-    /// 
+    ///
     /// If the `LinkedList` is empty, `None` is returned.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::LinkedList;
-    /// 
+    ///
     /// let mut list = LinkedList::from_iter(0..=2);
     /// assert_eq!(list.pop_front(), Some(0));
     /// assert_eq!(list.pop_front(), Some(1));
@@ -149,6 +160,8 @@ impl<T> LinkedList<T> {
 
 impl<T> Node<T> {
     /// Creates and allocates a new `Node<T>` with the given `value`.
+    ///
+    /// It correctly handles insertions if `prev` and `next` are provided.
     fn new(value: T, prev: Option<NodeBox<T>>, next: Option<NodeBox<T>>) -> NodeBox<T> {
         let layout = core::alloc::Layout::new::<Node<T>>();
         let node = Node { value, prev, next };
@@ -161,31 +174,33 @@ impl<T> Node<T> {
         unsafe { alloc.write(node) };
         // SAFETY: Pointer is not null
         let alloc = unsafe { core::ptr::NonNull::new_unchecked(alloc) };
+
         // Handle insertion
-        let prev = prev.map(|mut p| unsafe { p.as_mut() });
-        let next = next.map(|mut n| unsafe { n.as_mut() });
-        match (prev, next) {
-            (None, Some(next)) => next.prev = Some(alloc),
-            (Some(prev), None) => prev.next = Some(alloc),
-            (Some(prev), Some(next)) => {
-                prev.next = Some(alloc);
-                next.prev = Some(alloc);
-            }
-            (None, None) => {}
+        // SAFETY: If `prev` and `next` are `Some`, then they are valid
+        if let Some(mut prev) = prev {
+            let prev = unsafe { prev.as_mut() };
+            prev.next = Some(alloc);
+        }
+        if let Some(mut next) = next {
+            let next = unsafe { next.as_mut() };
+            next.prev = Some(alloc);
         }
         alloc
     }
+    /// Removes the `Node<T>` from the `LinkedList` and returns its value.
+    ///
+    /// Updates the `prev` and `next` links accordingly:
+    /// - `prev.next = self.next`
+    /// - `next.prev = self.prev`
     fn remove(self) -> T {
-        let prev = self.prev.map(|mut p| unsafe { p.as_mut() });
-        let next = self.next.map(|mut n| unsafe { n.as_mut() });
-        match (prev, next) {
-            (None, Some(next)) => next.prev = None,
-            (Some(prev), None) => prev.next = None,
-            (Some(prev), Some(next)) => {
-                prev.next = self.next;
-                next.prev = self.prev;
-            }
-            (None, None) => {}
+        // SAFETY: If `self.prev` and `self.next` are `Some`, then they are valid
+        if let Some(mut prev) = self.prev {
+            let prev = unsafe { prev.as_mut() };
+            prev.next = self.next;
+        }
+        if let Some(mut next) = self.next {
+            let next = unsafe { next.as_mut() };
+            next.prev = self.prev;
         }
         self.value
     }
@@ -250,6 +265,15 @@ impl<T> Drop for LinkedList<T> {
     }
 }
 
+impl<T> Clone for LinkedList<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        LinkedList::from_iter(self.iter().cloned())
+    }
+}
+
 /// An iterator over references of the elements in the `LinkedList`.
 ///
 /// # Example
@@ -263,7 +287,6 @@ impl<T> Drop for LinkedList<T> {
 /// assert_eq!(iter.next(), Some(&2));
 /// assert_eq!(iter.next(), None);
 /// ```
-#[derive(Debug)]
 pub struct Iter<'a, T> {
     current: Option<NodeBox<T>>,
     len: usize,
@@ -282,7 +305,18 @@ impl<'a, T> Iterator for Iter<'a, T> {
         (self.len, Some(self.len))
     }
 }
+impl<T> Iterator for LinkedList<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.pop_front()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+}
+
 impl<'a, T> ExactSizeIterator for Iter<'a, T> {}
+impl<T> ExactSizeIterator for LinkedList<T> {}
 
 impl<'a, T> IntoIterator for &'a LinkedList<T> {
     type Item = &'a T;
@@ -300,7 +334,7 @@ impl<T> FromIterator<T> for LinkedList<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut list = Self::new();
         for item in iter {
-            list.push(item);
+            list.push_back(item);
         }
         list
     }
@@ -345,7 +379,10 @@ where
 }
 
 impl<T> Eq for LinkedList<T> where T: Eq {}
-impl<T> Ord for LinkedList<T> where T: Ord {
+impl<T> Ord for LinkedList<T>
+where
+    T: Ord,
+{
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.iter().cmp(other)
     }
