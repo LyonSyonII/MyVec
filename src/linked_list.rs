@@ -288,6 +288,14 @@ where
     }
 }
 
+impl<T> Extend<T> for LinkedList<T> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for value in iter {
+            self.push_back(value)
+        }
+    }
+}
+
 /// An iterator over references of the elements in the `LinkedList`.
 ///
 /// # Example
