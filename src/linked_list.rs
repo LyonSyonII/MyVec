@@ -144,6 +144,20 @@ impl<T> LinkedList<T> {
     pub fn iter(&self) -> Iter<'_, T> {
         self.into_iter()
     }
+    /// Returns an iterator over mutable references of the elements in the `LinkedList`.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::LinkedList;
+    /// 
+    /// let mut list = LinkedList::from_iter(0..=2);
+    /// for item in list.iter_mut() {
+    ///     *item *= 2;
+    /// }
+    /// assert_eq!(list, [0, 2, 4]);
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        self.into_iter()
+    }
     /// Returns the lenght of the list.
     ///
     /// # Example
@@ -314,6 +328,39 @@ pub struct Iter<'a, T> {
     len: usize,
     _marker: std::marker::PhantomData<&'a T>,
 }
+/// An iterator over mutable references of the elements in the `LinkedList`.
+/// 
+/// # Example
+/// ```
+/// use mycollections::LinkedList;
+///
+/// let mut list = LinkedList::from_iter(0..=2);
+/// for item in &mut list {
+///     *item *= 2;
+/// }
+/// assert_eq!(list, [0, 2, 4]);
+/// ```
+pub struct IterMut<'a, T> {
+    current: Option<NodeBox<T>>,
+    len: usize,
+    _marker: std::marker::PhantomData<&'a mut T>,
+}
+/// An iterator over the elements in the `LinkedList`.
+/// 
+/// # Example
+/// ```
+/// use mycollections::LinkedList;
+/// 
+/// let mut list = LinkedList::from_iter(0..=2);
+/// let mut iter = list.into_iter();
+/// assert_eq!(iter.next(), Some(0));
+/// assert_eq!(iter.next(), Some(1));
+/// assert_eq!(iter.next(), Some(2));
+/// assert_eq!(iter.next(), None);
+/// ```
+pub struct IntoIter<T> {
+    list: LinkedList<T>
+}
 
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
@@ -327,18 +374,31 @@ impl<'a, T> Iterator for Iter<'a, T> {
         (self.len, Some(self.len))
     }
 }
-impl<T> Iterator for LinkedList<T> {
-    type Item = T;
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
     fn next(&mut self) -> Option<Self::Item> {
-        self.pop_front()
+        let current = unsafe { self.current?.as_mut() };
+        self.current = current.next;
+        self.len -= 1;
+        Some(&mut current.value)
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.len, Some(self.len))
     }
 }
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.list.pop_front()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.list.len, Some(self.list.len))
+    }
+}
 
 impl<'a, T> ExactSizeIterator for Iter<'a, T> {}
-impl<T> ExactSizeIterator for LinkedList<T> {}
+impl<'a, T> ExactSizeIterator for IterMut<'a, T> {}
+impl<T> ExactSizeIterator for IntoIter<T> {}
 
 impl<'a, T> IntoIterator for &'a LinkedList<T> {
     type Item = &'a T;
@@ -349,6 +409,24 @@ impl<'a, T> IntoIterator for &'a LinkedList<T> {
             len: self.len,
             _marker: std::marker::PhantomData,
         }
+    }
+}
+impl<'a, T> IntoIterator for &'a mut LinkedList<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        IterMut {
+            current: self.head,
+            len: self.len,
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+impl<T> IntoIterator for LinkedList<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter { list: self }
     }
 }
 
