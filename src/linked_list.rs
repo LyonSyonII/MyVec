@@ -51,7 +51,7 @@ impl<T> LinkedList<T> {
         }
         self.len += 1;
     }
-    /// Pops the last element from the `LinkedList` and returns it.
+    /// Removes the last element of the `LinkedList` and returns it.
     ///
     /// If the `LinkedList` is empty, `None` is returned.
     ///
@@ -66,24 +66,42 @@ impl<T> LinkedList<T> {
     /// assert_eq!(list.pop_back(), None);
     /// ```
     pub fn pop_back(&mut self) -> Option<T> {
-        let tailptr = self.tail?.as_ptr();
         // SAFETY: If `self.tail` is `Some`, then it's valid.
-        let tail = unsafe { tailptr.read() };
-        unsafe { std::alloc::dealloc(tailptr as *mut u8, core::alloc::Layout::new::<Node<T>>()) };
-
+        let tail = unsafe { Node::dealloc(self.tail?) };
         self.len -= 1;
-        if self.len == 0 {
-            self.tail = None;
-            self.head = None;
-            Some(tail.remove())
-        } else if self.len == 1 {
+        if self.len <= 1 {
             self.tail = tail.prev;
             self.head = tail.prev;
-            Some(tail.remove())
         } else {
             self.tail = tail.prev;
-            Some(tail.remove())
         }
+        Some(tail.remove())
+    }
+    /// Removes the first element of the `LinkedList` and returns it.
+    /// 
+    /// If the `LinkedList` is empty, `None` is returned.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::LinkedList;
+    /// 
+    /// let mut list = LinkedList::from_iter(0..=2);
+    /// assert_eq!(list.pop_front(), Some(0));
+    /// assert_eq!(list.pop_front(), Some(1));
+    /// assert_eq!(list.pop_front(), Some(2));
+    /// assert_eq!(list.pop_front(), None);
+    /// ```
+    pub fn pop_front(&mut self) -> Option<T> {
+        // SAFETY: If `self.head` is `Some`, then it's valid.
+        let head = unsafe { Node::dealloc(self.head?) };
+        self.len -= 1;
+        if self.len <= 1 {
+            self.tail = head.next;
+            self.head = head.next;
+        } else {
+            self.head = head.next;
+        }
+        Some(head.remove())
     }
     /// Returns an iterator over references of the elements in the `LinkedList`.
     ///
@@ -140,9 +158,7 @@ impl<T> Node<T> {
             std::alloc::handle_alloc_error(layout)
         }
         // SAFETY: Pointer is valid and aligned
-        unsafe {
-            alloc.write(node);
-        }
+        unsafe { alloc.write(node) };
         // SAFETY: Pointer is not null
         let alloc = unsafe { core::ptr::NonNull::new_unchecked(alloc) };
         // Handle insertion
@@ -172,6 +188,13 @@ impl<T> Node<T> {
             (None, None) => {}
         }
         self.value
+    }
+    /// Deallocates the `NodeBox<T>` and returns the `Node<T>` it contains.
+    unsafe fn dealloc(node: NodeBox<T>) -> Node<T> {
+        let nodeptr = node.as_ptr();
+        let node = nodeptr.read();
+        unsafe { std::alloc::dealloc(nodeptr as *mut u8, core::alloc::Layout::new::<Node<T>>()) };
+        node
     }
 }
 
@@ -298,7 +321,7 @@ where
     Slice: AsRef<[T]>,
 {
     fn eq(&self, other: &Slice) -> bool {
-        self.iter().eq(other.as_ref().iter())
+        self.iter().eq(other.as_ref())
     }
 }
 
@@ -307,7 +330,7 @@ where
     T: PartialOrd,
 {
     fn partial_cmp(&self, other: &Self) -> std::option::Option<std::cmp::Ordering> {
-        self.iter().partial_cmp(other.iter())
+        self.iter().partial_cmp(other)
     }
 }
 
@@ -317,6 +340,13 @@ where
     Slice: AsRef<[T]>,
 {
     fn partial_cmp(&self, other: &Slice) -> std::option::Option<std::cmp::Ordering> {
-        self.iter().partial_cmp(other.as_ref().iter())
+        self.iter().partial_cmp(other.as_ref())
+    }
+}
+
+impl<T> Eq for LinkedList<T> where T: Eq {}
+impl<T> Ord for LinkedList<T> where T: Ord {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.iter().cmp(other)
     }
 }
