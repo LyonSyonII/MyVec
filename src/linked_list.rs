@@ -242,6 +242,7 @@ impl<T> Drop for LinkedList<T> {
 #[derive(Debug)]
 pub struct Iter<'a, T> {
     current: Option<NodeBox<T>>,
+    len: usize,
     _marker: std::marker::PhantomData<&'a T>,
 }
 
@@ -250,9 +251,14 @@ impl<'a, T> Iterator for Iter<'a, T> {
     fn next(&mut self) -> Option<Self::Item> {
         let current = unsafe { self.current?.as_ref() };
         self.current = current.next;
+        self.len -= 1;
         Some(&current.value)
     }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
 }
+impl<'a, T> ExactSizeIterator for Iter<'a, T> {}
 
 impl<'a, T> IntoIterator for &'a LinkedList<T> {
     type Item = &'a T;
@@ -260,6 +266,7 @@ impl<'a, T> IntoIterator for &'a LinkedList<T> {
     fn into_iter(self) -> Self::IntoIter {
         Iter {
             current: self.head,
+            len: self.len,
             _marker: std::marker::PhantomData,
         }
     }
