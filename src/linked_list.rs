@@ -47,17 +47,35 @@ impl<T> LinkedList<T> {
     /// use mycollections::LinkedList;
     ///
     /// let mut list = LinkedList::new();
-    /// list.push(0);
-    /// list.push(1);
-    /// list.push(2);
+    /// list.push_back(0);
+    /// list.push_back(1);
+    /// list.push_back(2);
     /// assert_eq!(list, [0, 1, 2]);
     /// ```
     pub fn push_back(&mut self, value: T) {
         let node = Some(Node::new(value, self.tail, None));
-        if self.tail.is_some() {
-            self.tail = node;
-        } else {
+        self.tail = node;
+        if self.head.is_none() {
             self.head = node;
+        }
+        self.len += 1;
+    }
+    /// Pushes a new element to the front of the `LinkedList`.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::LinkedList;
+    ///
+    /// let mut list = LinkedList::new();
+    /// list.push_front(0);
+    /// list.push_front(1);
+    /// list.push_front(2);
+    /// assert_eq!(list, [2, 1, 0]);
+    /// ```
+    pub fn push_front(&mut self, value: T) {
+        let node = Some(Node::new(value, None, self.head));
+        self.head = node;
+        if self.tail.is_none() {
             self.tail = node;
         }
         self.len += 1;
@@ -80,11 +98,9 @@ impl<T> LinkedList<T> {
         // SAFETY: If `self.tail` is `Some`, then it's valid.
         let tail = unsafe { Node::dealloc(self.tail?) };
         self.len -= 1;
+        self.tail = tail.prev;
         if self.len <= 1 {
-            self.tail = tail.prev;
             self.head = tail.prev;
-        } else {
-            self.tail = tail.prev;
         }
         Some(tail.remove())
     }
@@ -106,11 +122,9 @@ impl<T> LinkedList<T> {
         // SAFETY: If `self.head` is `Some`, then it's valid.
         let head = unsafe { Node::dealloc(self.head?) };
         self.len -= 1;
+        self.head = head.next;
         if self.len <= 1 {
             self.tail = head.next;
-            self.head = head.next;
-        } else {
-            self.head = head.next;
         }
         Some(head.remove())
     }
@@ -150,7 +164,7 @@ impl<T> LinkedList<T> {
     ///
     /// let mut list = LinkedList::new();
     /// assert_eq!(list.is_empty(), true);
-    /// list.push(1);
+    /// list.push_back(1);
     /// assert_eq!(list.is_empty(), false);
     /// ```
     pub const fn is_empty(&self) -> bool {
