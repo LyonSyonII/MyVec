@@ -1,3 +1,15 @@
+//! My implementation of Rust's [`VecDeque`](std::collections::VecDeque).
+//!
+//! Implemented methods should behave exactly like the original.
+//! 
+//! It is NOT implemented as a Ring Buffer, instead it uses half of the capacity as the start and
+//! half as the end.
+//! 
+//! This ensures that memory is always contiguous.
+
+/// My implementation of Rust's [`Vec`](std::vec::Vec).
+///
+/// Implemented methods should behave exactly like the original.
 pub struct Deque<T> {
     /// Negative offset from `ptr` to the start of the deque.
     start: usize,
@@ -11,6 +23,7 @@ pub struct Deque<T> {
 }
 
 impl<T> Deque<T> {
+    /// Creates a new `Deque`, does not allocate.
     pub const fn new() -> Deque<T> {
         Deque {
             start: 0,
@@ -20,9 +33,11 @@ impl<T> Deque<T> {
             _marker: core::marker::PhantomData,
         }
     }
+    /// Returns the length of the deque.
     pub const fn len(&self) -> usize {
-        self.end - self.start
+        self.start + self.end
     }
+    /// Returns `true` if the deque is empty.
     pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
