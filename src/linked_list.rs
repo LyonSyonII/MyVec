@@ -32,7 +32,7 @@ impl<T> LinkedList<T> {
     /// assert_eq!(list.pop_back(), None);
     /// assert_eq!(list, []);
     /// ```
-    pub fn new() -> LinkedList<T> {
+    pub const fn new() -> LinkedList<T> {
         LinkedList {
             head: None,
             tail: None,
@@ -61,7 +61,7 @@ impl<T> LinkedList<T> {
         self.len += 1;
     }
     /// Pushes a new element to the front of the `LinkedList`.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::LinkedList;
@@ -145,11 +145,11 @@ impl<T> LinkedList<T> {
         self.into_iter()
     }
     /// Returns an iterator over mutable references of the elements in the `LinkedList`.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::LinkedList;
-    /// 
+    ///
     /// let mut list = LinkedList::from_iter(0..=2);
     /// for item in list.iter_mut() {
     ///     *item *= 2;
@@ -329,7 +329,7 @@ pub struct Iter<'a, T> {
     _marker: std::marker::PhantomData<&'a T>,
 }
 /// An iterator over mutable references of the elements in the `LinkedList`.
-/// 
+///
 /// # Example
 /// ```
 /// use mycollections::LinkedList;
@@ -346,11 +346,11 @@ pub struct IterMut<'a, T> {
     _marker: std::marker::PhantomData<&'a mut T>,
 }
 /// An iterator over the elements in the `LinkedList`.
-/// 
+///
 /// # Example
 /// ```
 /// use mycollections::LinkedList;
-/// 
+///
 /// let mut list = LinkedList::from_iter(0..=2);
 /// let mut iter = list.into_iter();
 /// assert_eq!(iter.next(), Some(0));
@@ -359,7 +359,7 @@ pub struct IterMut<'a, T> {
 /// assert_eq!(iter.next(), None);
 /// ```
 pub struct IntoIter<T> {
-    list: LinkedList<T>
+    list: LinkedList<T>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T> {

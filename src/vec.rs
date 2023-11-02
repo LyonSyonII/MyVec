@@ -21,7 +21,7 @@ impl<T> Vec<T> {
     ///
     /// let mut vec: Vec<i32> = Vec::new();
     /// ```
-    pub fn new() -> Vec<T> {
+    pub const fn new() -> Vec<T> {
         Vec {
             len: 0,
             capacity: 0,
