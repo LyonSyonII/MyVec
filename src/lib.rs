@@ -3,7 +3,7 @@
 //! My own implementations of the data structures in the Rust `std::collections` module.
 //!
 //! All methods and structs are fully documented (enforced by `#[deny(missing_docs)]`).
-//! 
+//!
 //! All collections support ZSTs (zero-sized types).
 //!
 //! Currently implemented:
@@ -19,7 +19,7 @@ pub use linked_list::LinkedList;
 pub use vec::Vec;
 
 /// Allocates enough memory for [T; size].
-/// 
+///
 /// Returns `None` if `T` is a ZST (zero-sized type) or if `size == 0`.
 pub(crate) fn alloc_array<T>(size: usize) -> Option<core::ptr::NonNull<T>> {
     let layout = array_layout::<T>(size);
@@ -33,9 +33,9 @@ pub(crate) fn alloc_array<T>(size: usize) -> Option<core::ptr::NonNull<T>> {
     unsafe { Some(core::ptr::NonNull::new_unchecked(alloc as *mut T)) }
 }
 /// Reallocates memory from `[old_ptr; old_layout]` to `[T; new_size]`.
-/// 
+///
 /// If `old_size == 0`, allocates memory for [T; new_size] without reallocating.
-/// 
+///
 /// Returns `None` if `T` is a ZST (zero-sized type) or if `size == 0`.
 pub(crate) fn realloc_array<T>(
     old_ptr: core::ptr::NonNull<T>,
@@ -46,7 +46,7 @@ pub(crate) fn realloc_array<T>(
     if new_layout.size() == 0 {
         return None;
     }
-    // SAFETY: 
+    // SAFETY:
     let alloc = if old_size == 0 {
         unsafe { std::alloc::alloc(new_layout) }
     } else {
