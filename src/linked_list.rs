@@ -500,5 +500,12 @@ mod tests {
         assert_eq!(list, [(); 5]);
         assert_eq!(list.pop_front(), Some(()));
         assert_eq!(list.pop_back(), Some(()));
+        assert_eq!(list.len(), 3);
+
+        let mut iter = list.into_iter();
+        assert_eq!(iter.next(), Some(()));
+        assert_eq!(iter.next(), Some(()));
+        assert_eq!(iter.next(), Some(()));
+        assert_eq!(iter.next(), None);
     }
 }
