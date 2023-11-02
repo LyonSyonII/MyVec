@@ -290,33 +290,10 @@ impl<T> Vec<T> {
     ///
     /// If the current capacity is 0, an `alloc` is performed instead.
     fn realloc_with_capacity(&mut self, capacity: usize) {
-        let new_size = capacity * std::mem::size_of::<T>();
-        // If the new size is 0, do nothing.
-        // Avoids problems with ZSTs.
-        if new_size == 0 {
-            return;
+        if let Some(ptr) = crate::realloc_array(self.ptr, self.capacity, capacity) {
+            self.ptr = ptr;
+            self.capacity = capacity;
         }
-
-        // SAFETY: Size and alignment are correct
-        let alloc = unsafe {
-            if self.capacity == 0 {
-                std::alloc::alloc(core::alloc::Layout::from_size_align_unchecked(
-                    new_size,
-                    std::mem::align_of::<T>(),
-                ))
-            } else {
-                std::alloc::realloc(self.ptr.as_ptr() as *mut u8, self.layout(), new_size)
-            }
-        };
-        if alloc.is_null() {
-            std::alloc::handle_alloc_error(self.layout());
-        }
-        // SAFETY: Pointer is not null
-        unsafe {
-            self.ptr = core::ptr::NonNull::new_unchecked(alloc as *mut T);
-        }
-
-        self.capacity = capacity;
     }
 }
 
@@ -603,5 +580,27 @@ impl<'a, T> IntoIterator for &'a mut Vec<T> {
 impl<T> Drop for Drain<'_, T> {
     fn drop(&mut self) {
         for _ in self {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn zst() {
+        let mut vec = Vec::<()>::new();
+        assert_eq!(vec.len(), 0);
+        assert!(vec.is_empty());
+        assert_eq!(vec.capacity, 0);
+        vec.push(());
+        assert_eq!(vec.len(), 1);
+        assert!(!vec.is_empty());
+        assert_eq!(vec.capacity, 0);
+        vec.extend((0..5).map(|_| ()));
+        assert_eq!(vec.len(), 6);
+        assert!(!vec.is_empty());
+        assert_eq!(vec.capacity, 0);
+
+        assert_eq!(vec, [(); 6])
     }
 }

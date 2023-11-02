@@ -193,15 +193,9 @@ impl<T> Node<T> {
     fn new(value: T, prev: Option<NodeBox<T>>, next: Option<NodeBox<T>>) -> NodeBox<T> {
         let layout = core::alloc::Layout::new::<Node<T>>();
         let node = Node { value, prev, next };
-        // SAFETY: Size and alignment are correct
-        let alloc = unsafe { std::alloc::alloc(layout) } as *mut Node<T>;
-        if alloc.is_null() {
-            std::alloc::handle_alloc_error(layout)
-        }
-        // SAFETY: Pointer is valid and aligned
-        unsafe { alloc.write(node) };
-        // SAFETY: Pointer is not null
-        let alloc = unsafe { core::ptr::NonNull::new_unchecked(alloc) };
+        let alloc = crate::alloc_array::<Node<T>>(1).unwrap_or(core::ptr::NonNull::dangling());
+        // SAFETY: Pointer is valid and aligned; With ZSTs ptr::write is a no-op
+        unsafe { alloc.as_ptr().write(node) };
 
         // Handle insertion
         // SAFETY: If `prev` and `next` are `Some`, then they are valid
@@ -485,5 +479,26 @@ where
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.iter().cmp(other)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn zst() {
+        let mut list = LinkedList::<()>::new();
+        list.push_back(());
+        assert_eq!(list.len(), 1);
+        assert_eq!(list, [()]);
+        assert_eq!(list.pop_back(), Some(()));
+        assert_eq!(list.len(), 0);
+
+        list.extend((0..5).map(|_| ()));
+        assert_eq!(list.len(), 5);
+        assert_eq!(list, [(); 5]);
+        assert_eq!(list.pop_front(), Some(()));
+        assert_eq!(list.pop_back(), Some(()));
     }
 }

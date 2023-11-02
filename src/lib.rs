@@ -19,10 +19,10 @@ pub use vec::Vec;
 /// 
 /// Returns `None` if `T` is a ZST (zero-sized type) or if `size == 0`.
 pub(crate) fn alloc_array<T>(size: usize) -> Option<core::ptr::NonNull<T>> {
-    if size * core::mem::size_of::<T>() == 0 {
+    let layout = array_layout::<T>(size);
+    if layout.size() == 0 {
         return None;
     }
-    let layout = array_layout::<T>(size);
     let alloc = unsafe { std::alloc::alloc(layout) };
     if alloc.is_null() {
         std::alloc::handle_alloc_error(layout);
@@ -39,10 +39,10 @@ pub(crate) fn realloc_array<T>(
     old_size: usize,
     new_size: usize,
 ) -> Option<core::ptr::NonNull<T>> {
-    if new_size * core::mem::size_of::<T>() == 0 {
+    let new_layout = array_layout::<T>(new_size);
+    if new_layout.size() == 0 {
         return None;
     }
-    let new_layout = array_layout::<T>(new_size);
     // SAFETY: 
     let alloc = if old_size == 0 {
         unsafe { std::alloc::alloc(new_layout) }
