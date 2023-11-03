@@ -132,10 +132,14 @@ impl<T> Deque<T> {
         self.capacity/2 - self.end
     }
     /// Returns the start offset of the deque.
+    /// 
+    /// It's also the number of elements that have been inserted with `push_front()`.
     pub fn start(&self) -> usize {
         self.start
     }
     /// Returns the end offset of the deque.
+    /// 
+    /// It's also the number of elements that have been inserted with `push_back()`.
     pub fn end(&self) -> usize {
         self.end
     }
