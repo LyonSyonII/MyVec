@@ -272,15 +272,6 @@ impl<T> Vec<T> {
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         self.into_iter()
     }
-    /// Returns the layout for the current allocation.
-    fn layout(&self) -> core::alloc::Layout {
-        unsafe {
-            core::alloc::Layout::from_size_align_unchecked(
-                self.capacity * std::mem::size_of::<T>(),
-                std::mem::align_of::<T>(),
-            )
-        }
-    }
     fn realloc_if_necessary(&mut self) {
         if self.capacity == self.len {
             self.realloc_with_capacity(2.max(self.capacity * 2))
@@ -305,12 +296,7 @@ impl<T> Default for Vec<T> {
 
 impl<T> Drop for Vec<T> {
     fn drop(&mut self) {
-        // SAFETY: Pointer is not null if capacity > 0
-        if self.capacity > 0 {
-            unsafe {
-                std::alloc::dealloc(self.ptr.as_ptr() as *mut u8, self.layout());
-            }
-        }
+        crate::dealloc_array(self.ptr, self.capacity)
     }
 }
 

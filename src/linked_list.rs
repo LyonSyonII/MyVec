@@ -191,7 +191,6 @@ impl<T> Node<T> {
     ///
     /// It correctly handles insertions if `prev` and `next` are provided.
     fn new(value: T, prev: Option<NodeBox<T>>, next: Option<NodeBox<T>>) -> NodeBox<T> {
-        let layout = core::alloc::Layout::new::<Node<T>>();
         let node = Node { value, prev, next };
         let alloc = crate::alloc_array::<Node<T>>(1).unwrap_or(core::ptr::NonNull::dangling());
         // SAFETY: Pointer is valid and aligned; With ZSTs ptr::write is a no-op

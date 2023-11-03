@@ -61,6 +61,18 @@ pub(crate) fn realloc_array<T>(
     unsafe { Some(core::ptr::NonNull::new_unchecked(alloc as *mut T)) }
 }
 
+/// Deallocates memory for a `[T; size]`.
+/// 
+/// If `size == 0`, does nothing.
+pub(crate) fn dealloc_array<T>(ptr: core::ptr::NonNull<T>, size: usize) {
+    let layout = array_layout::<T>(size);
+    if layout.size() == 0 {
+        return;
+    }
+    // SAFETY: Size and alignment are correct, size > 0
+    unsafe { std::alloc::dealloc(ptr.as_ptr().cast(), layout)}
+}
+
 pub(crate) const fn array_layout<T>(size: usize) -> core::alloc::Layout {
     // SAFETY: The size and alignment are correct.
     unsafe {
