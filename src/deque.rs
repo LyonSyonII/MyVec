@@ -42,25 +42,25 @@ impl<T> Deque<T> {
         self.len() == 0
     }
     /// Pushes a new element to the back of the deque.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let mut deque = Deque::new();
     /// assert_eq!(deque.capacity(), 0);
     /// assert_eq!([deque.start(), deque.end()], [0, 0]);
-    /// 
+    ///
     /// deque.push_back(10);
     /// assert_eq!(deque.capacity(), 4);
     /// assert_eq!([deque.start(), deque.end()], [0, 1]);
     /// assert_eq!(deque.as_slice(), &[10]);
-    /// 
+    ///
     /// deque.push_back(11);
     /// assert_eq!(deque.capacity(), 4);
     /// assert_eq!([deque.start(), deque.end()], [0, 2]);
     /// assert_eq!(deque.as_slice(), &[10, 11]);
-    /// 
+    ///
     /// deque.push_back(12);
     /// assert_eq!(deque.capacity(), 8);
     /// assert_eq!([deque.start(), deque.end()], [0, 3]);
@@ -73,11 +73,11 @@ impl<T> Deque<T> {
         self.end += 1;
     }
     /// Pushes a new element to the front of the deque.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let mut deque = Deque::new();
     /// deque.push_front(0);
     /// deque.push_front(1);
@@ -89,13 +89,13 @@ impl<T> Deque<T> {
         unsafe { self.startptr().write(value) };
     }
     /// Removes the last element from the deque and returns it.
-    /// 
+    ///
     /// If the deque is empty, `None` is returned.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let mut deque = Deque::new();
     /// deque.push_back(0);
     /// deque.push_back(1);
@@ -119,58 +119,58 @@ impl<T> Deque<T> {
         }
     }
     /// Returns the contents of the deque as a slice.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let deque = Deque::from_iter(0..=2);
     /// assert_eq!(deque.as_slice(), &[0, 1, 2]);
     pub fn as_slice(&self) -> &[T] {
         unsafe { core::slice::from_raw_parts(self.startptr(), self.len()) }
     }
     /// Returns the contents of the deque as a mutable slice.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let mut deque = Deque::from_iter([2, 0, 1]);
     /// deque.as_mut_slice().sort();
     /// assert_eq!(deque.as_slice(), &[0, 1, 2]);
     pub fn as_mut_slice(&mut self) -> &mut [T] {
-        unsafe { core::slice::from_raw_parts_mut(self.startptr(), self.len())}
+        unsafe { core::slice::from_raw_parts_mut(self.startptr(), self.len()) }
     }
     /// Returns the currently allocated capacity.
     pub fn capacity(&self) -> usize {
         self.capacity
     }
     /// Returns the currently allocated capacity at the front of the `Deque`.
-    /// 
+    ///
     /// If more than `front_capacity()` elements are inserted with `push_front()`, the `Deque` will reallocate.
     pub fn front_capacity(&self) -> usize {
-        self.capacity/2 - self.start
+        self.capacity / 2 - self.start
     }
     /// Returns the currently allocated capacity at the back of the `Deque`.
-    /// 
+    ///
     /// If more than `back_capacity()` elements are inserted with `push_back()`, the `Deque` will reallocate.
     pub fn back_capacity(&self) -> usize {
-        self.capacity/2 - self.end
+        self.capacity / 2 - self.end
     }
     /// Returns the start offset of the deque.
-    /// 
+    ///
     /// It's also the number of elements that have been inserted with `push_front()`.
     pub fn start(&self) -> usize {
         self.start
     }
     /// Returns the end offset of the deque.
-    /// 
+    ///
     /// It's also the number of elements that have been inserted with `push_back()`.
     pub fn end(&self) -> usize {
         self.end
     }
     /// Reserves capacity for at least `additional` more elements to be inserted in the `Deque`, either at the front or the back.
-    /// 
+    ///
     /// If you know if the new items will be inserted at the front or back, you can use `reserve_front()` or `reserve_back()`.
     ///
     /// New capacity will be the next power of two large enough to hold the additional elements.
@@ -289,12 +289,14 @@ impl<T> Deque<T> {
     ///              |     |
     ///            start  end
     fn realloc_with_capacity(&mut self, new_capacity: usize) {
-        let Some(new_ptr) = crate::alloc_array::<T>(new_capacity) else { return };
-        
+        let Some(new_ptr) = crate::alloc_array::<T>(new_capacity) else {
+            return;
+        };
+
         // `src` is the start of deque
         let src = self.startptr();
         // `dst` = middle of new deque - start
-        let dst = unsafe { new_ptr.as_ptr().add(new_capacity/2 - self.start) };
+        let dst = unsafe { new_ptr.as_ptr().add(new_capacity / 2 - self.start) };
         // copy valid elements from old deque to new
         unsafe { std::ptr::copy_nonoverlapping(src, dst, self.len()) };
         crate::dealloc_array(self.ptr, self.capacity);
@@ -305,15 +307,15 @@ impl<T> Deque<T> {
         unsafe { self.ptr.as_ptr().add(self.capacity / 2) }
     }
     /// Returns a pointer to the start of the deque.
-    /// 
+    ///
     /// The pointer can be read as long as the deque is not empty.
     fn startptr(&self) -> *mut T {
         unsafe { self.middleptr().sub(self.start) }
     }
     /// Returns a pointer to the end of the deque.
-    /// 
+    ///
     /// The pointer cannot be read, as it represents the end boundary of the deque.
-    /// 
+    ///
     /// If you want to access the last element, use `endptr().as_ptr().sub(1)`
     /// ```bash
     ///    [0, 1, 2, 3]
@@ -366,8 +368,9 @@ impl<T> AsMut<[T]> for Deque<T> {
 impl<T, Slice> PartialEq<Slice> for Deque<T>
 where
     T: PartialEq,
-    Slice: AsRef<[T]> {
-        fn eq(&self, other: &Slice) -> bool {
-            self.as_ref() == other.as_ref()
-        }
+    Slice: AsRef<[T]>,
+{
+    fn eq(&self, other: &Slice) -> bool {
+        self.as_ref() == other.as_ref()
     }
+}
