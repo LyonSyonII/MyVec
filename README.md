@@ -7,3 +7,4 @@ All collections support ZSTs (zero-sized types).
 Currently implemented:
 - `Vec`
 - `LinkedList`
+- `Deque`
