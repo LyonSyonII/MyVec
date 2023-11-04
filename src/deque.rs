@@ -42,31 +42,34 @@ impl<T> Deque<T> {
         self.len() == 0
     }
     /// Returns a reference to the element at the given index or `None` if the index is out of bounds.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let deque = Deque::from_iter(0..=4);
     /// assert_eq!(deque.get(0), Some(&0));
     /// assert_eq!(deque.get(2), Some(&2));
     /// assert_eq!(deque.get(4), Some(&4));
     /// ```
-    pub fn get<I>(&self, index: I) -> Option<&T> where I: std::slice::SliceIndex<[T], Output = T> {
+    pub fn get<I>(&self, index: I) -> Option<&T>
+    where
+        I: std::slice::SliceIndex<[T], Output = T>,
+    {
         self.as_ref().get(index)
     }
     /// Returns a reference to the element at the given index.  
     /// Does not check bounds.
-    /// 
+    ///
     /// For a safe alternative see `get`.
-    /// 
+    ///
     /// # Safety
     /// * index < self.len()
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let deque = Deque::from_iter(0..=4);
     /// unsafe {
     ///     assert_eq!(deque.get_unchecked(0), &0);
@@ -74,41 +77,50 @@ impl<T> Deque<T> {
     ///     assert_eq!(deque.get_unchecked(4), &4);
     /// }
     /// ```
-    pub unsafe fn get_unchecked<I>(&self, index: I) -> &T where I: std::slice::SliceIndex<[T], Output = T> {
+    pub unsafe fn get_unchecked<I>(&self, index: I) -> &T
+    where
+        I: std::slice::SliceIndex<[T], Output = T>,
+    {
         self.as_ref().get_unchecked(index)
     }
     /// Returns a mutable reference to the element at the given index or `None` if the index is out of bounds.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let mut deque = Deque::from_iter(0..=4);
     /// if let Some(n) = deque.get_mut(2) {
     ///     *n = 6;
     /// }
     /// assert_eq!(deque, [0, 1, 6, 3, 4]);
     /// ```
-    pub fn get_mut<I>(&mut self, index: I) -> Option<&mut T> where I: std::slice::SliceIndex<[T], Output = T> {
+    pub fn get_mut<I>(&mut self, index: I) -> Option<&mut T>
+    where
+        I: std::slice::SliceIndex<[T], Output = T>,
+    {
         self.as_mut().get_mut(index)
     }
     /// Returns a mutable reference to the element at the given index.  
     /// Does not check bounds.
-    /// 
+    ///
     /// For a safe alternative see `get_mut`.
-    /// 
+    ///
     /// # Safety
     /// * index < self.len()
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let mut deque = Deque::from_iter(0..=4);
     /// unsafe { *deque.get_unchecked_mut(2) = 6 };
     /// assert_eq!(deque, [0, 1, 6, 3, 4]);
     /// ```
-    pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut T where I: std::slice::SliceIndex<[T], Output = T> {
+    pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut T
+    where
+        I: std::slice::SliceIndex<[T], Output = T>,
+    {
         self.as_mut().get_unchecked_mut(index)
     }
     /// Pushes a new element to the back of the deque.
@@ -341,11 +353,11 @@ impl<T> Deque<T> {
         self.realloc_with_capacity(new_capacity.next_power_of_two())
     }
     /// An iterator over references to the elements of a [`Deque`].
-    /// 
+    ///
     /// # Example
     /// ```
     /// use mycollections::Deque;
-    /// 
+    ///
     /// let deque = Deque::from_iter(0..=4);
     /// let mut iter = deque.iter();
     /// assert_eq!(iter.next(), Some(&0));
@@ -463,18 +475,21 @@ where
     }
 }
 
-impl<T> core::fmt::Debug for Deque<T> where T: core::fmt::Debug {
+impl<T> core::fmt::Debug for Deque<T>
+where
+    T: core::fmt::Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(self).finish()
     }
 }
 
 /// An iterator over references to the elements of a [`Deque`].
-/// 
+///
 /// # Example
 /// ```
 /// use mycollections::Deque;
-/// 
+///
 /// let deque = Deque::from_iter(0..=4);
 /// let mut iter = deque.iter();
 /// assert_eq!(iter.next(), Some(&0));
@@ -496,13 +511,22 @@ impl<'a, T> Iterator for Iter<'a, T> {
         self.index += 1;
         self.deque.get(self.index - 1)
     }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.deque.len() - self.index;
+        (len, Some(len))
+    }
 }
+
+impl<T> ExactSizeIterator for Iter<'_, T> {}
 
 impl<'a, T> IntoIterator for &'a Deque<T> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Iter { deque: self, index: 0 }
+        Iter {
+            deque: self,
+            index: 0,
+        }
     }
 }
