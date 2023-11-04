@@ -72,6 +72,22 @@ impl<T> Deque<T> {
         unsafe { self.endptr().write(value) };
         self.end += 1;
     }
+    /// Pushes a new element to the front of the deque.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::Deque;
+    /// 
+    /// let mut deque = Deque::new();
+    /// deque.push_front(0);
+    /// deque.push_front(1);
+    /// deque.push_front(2);
+    /// assert_eq!(deque, [2, 1, 0]);
+    pub fn push_front(&mut self, value: T) {
+        self.realloc_if_necessary();
+        self.start += 1;
+        unsafe { self.startptr().write(value) };
+    }
     /// Removes the last element from the deque and returns it.
     /// 
     /// If the deque is empty, `None` is returned.
@@ -108,12 +124,22 @@ impl<T> Deque<T> {
     /// ```
     /// use mycollections::Deque;
     /// 
-    /// let mut deque = Deque::new();
-    /// deque.push_back(0);
-    /// deque.push_back(1);
-    /// assert_eq!(deque.as_slice(), &[0, 1]);
+    /// let deque = Deque::from_iter(0..=2);
+    /// assert_eq!(deque.as_slice(), &[0, 1, 2]);
     pub fn as_slice(&self) -> &[T] {
         unsafe { core::slice::from_raw_parts(self.startptr(), self.len()) }
+    }
+    /// Returns the contents of the deque as a mutable slice.
+    /// 
+    /// # Example
+    /// ```
+    /// use mycollections::Deque;
+    /// 
+    /// let mut deque = Deque::from_iter([2, 0, 1]);
+    /// deque.as_mut_slice().sort();
+    /// assert_eq!(deque.as_slice(), &[0, 1, 2]);
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        unsafe { core::slice::from_raw_parts_mut(self.startptr(), self.len())}
     }
     /// Returns the currently allocated capacity.
     pub fn capacity(&self) -> usize {
@@ -324,3 +350,24 @@ impl<T> Extend<T> for Deque<T> {
         }
     }
 }
+
+impl<T> AsRef<[T]> for Deque<T> {
+    fn as_ref(&self) -> &[T] {
+        self.as_slice()
+    }
+}
+
+impl<T> AsMut<[T]> for Deque<T> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self.as_mut_slice()
+    }
+}
+
+impl<T, Slice> PartialEq<Slice> for Deque<T>
+where
+    T: PartialEq,
+    Slice: AsRef<[T]> {
+        fn eq(&self, other: &Slice) -> bool {
+            self.as_ref() == other.as_ref()
+        }
+    }
