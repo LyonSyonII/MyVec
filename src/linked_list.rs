@@ -493,7 +493,7 @@ mod tests {
         assert_eq!(list, [()]);
         assert_eq!(list.pop_back(), Some(()));
         assert_eq!(list.len(), 0);
-
+        
         list.extend((0..5).map(|_| ()));
         assert_eq!(list.len(), 5);
         assert_eq!(list, [(); 5]);
