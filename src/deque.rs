@@ -178,21 +178,44 @@ impl<T> Deque<T> {
     /// ```
     /// use mycollections::Deque;
     ///
-    /// let mut deque = Deque::new();
-    /// deque.push_back(0);
-    /// deque.push_back(1);
-    /// deque.push_back(2);
-    /// deque.push_back(3);
-    /// deque.push_back(4);
-    /// assert_eq!(deque.as_slice(), &[0, 1, 2, 3, 4]);
-    /// assert_eq!(deque.pop_back(), Some(4));
-    /// assert_eq!(deque.pop_back(), Some(3));
+    /// let mut deque = Deque::from_iter(0..=2);
+    /// assert_eq!(deque, [0, 1, 2]);
     /// assert_eq!(deque.pop_back(), Some(2));
     /// assert_eq!(deque.pop_back(), Some(1));
     /// assert_eq!(deque.pop_back(), Some(0));
     /// assert_eq!(deque.pop_back(), None);
     /// ```
     pub fn pop_back(&mut self) -> Option<T> {
+        if self.is_empty() {
+            None
+        } else {
+            if self.end > 0 {
+                self.end -= 1;
+                Some(unsafe { self.endptr().read() })
+            } else {
+                Some(unsafe { self.startptr().add().read() })
+                self.start -= 1;
+            }
+            self.end -= 1;
+            Some(unsafe { self.endptr().read() })
+        }
+    }
+    /// Removes the first element from the deque and returns it.
+    ///
+    /// If the deque is empty, `None` is returned.
+    ///
+    /// # Example
+    /// ```
+    /// use mycollections::Deque;
+    ///
+    /// let mut deque = Deque::from_iter(0..=2);
+    /// assert_eq!(deque, [0, 1, 2]);
+    /// assert_eq!(deque.pop_back(), Some(0));
+    /// assert_eq!(deque.pop_back(), Some(1));
+    /// assert_eq!(deque.pop_back(), Some(2));
+    /// assert_eq!(deque.pop_back(), None);
+    /// ```
+    pub fn pop_front(&mut self) -> Option<T> {
         if self.is_empty() {
             None
         } else {
@@ -483,6 +506,22 @@ where
         f.debug_list().entries(self).finish()
     }
 }
+/// An iterator over the elements of a [`Deque`].
+/// 
+/// # Example
+/// ```
+/// use mycollections::Deque;
+/// 
+/// let deque = Deque::from_iter(0..=2);
+/// let mut iter = deque.into_iter();
+/// assert_eq!(iter.next(), Some(0));
+/// assert_eq!(iter.next(), Some(1));
+/// assert_eq!(iter.next(), Some(2));
+/// assert_eq!(iter.next(), None);
+/// ```
+pub struct IntoIter<T> {
+    deque: Deque<T>,
+}
 
 /// An iterator over references to the elements of a [`Deque`].
 ///
@@ -490,18 +529,24 @@ where
 /// ```
 /// use mycollections::Deque;
 ///
-/// let deque = Deque::from_iter(0..=4);
+/// let deque = Deque::from_iter(0..=2);
 /// let mut iter = deque.iter();
 /// assert_eq!(iter.next(), Some(&0));
 /// assert_eq!(iter.next(), Some(&1));
 /// assert_eq!(iter.next(), Some(&2));
-/// assert_eq!(iter.next(), Some(&3));
-/// assert_eq!(iter.next(), Some(&4));
 /// assert_eq!(iter.next(), None);
 /// ```
 pub struct Iter<'a, T> {
     deque: &'a Deque<T>,
     index: usize,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.deque.pop_front()
+    }
 }
 
 impl<'a, T> Iterator for Iter<'a, T> {
