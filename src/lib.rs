@@ -9,14 +9,17 @@
 //! Currently implemented:
 //! - `Vec`
 //! - `LinkedList`
+//! - `Deque`
 
 pub mod deque;
 pub mod linked_list;
 pub mod vec;
+pub mod map;
 
 pub use deque::Deque;
 pub use linked_list::LinkedList;
 pub use vec::Vec;
+pub use map::stupidmap::StupidMap;
 
 /// Allocates enough memory for [T; size].
 ///
@@ -46,12 +49,13 @@ pub(crate) fn realloc_array<T>(
     if new_layout.size() == 0 {
         return None;
     }
-    // SAFETY:
     let alloc = if old_size == 0 {
+        // SAFETY: Layout is correct
         unsafe { std::alloc::alloc(new_layout) }
     } else {
         let old_ptr = old_ptr.as_ptr() as *mut u8;
         let old_layout = array_layout::<T>(old_size);
+        // SAFETY: Layouts are correct, pointers are not null
         unsafe { std::alloc::realloc(old_ptr, old_layout, new_layout.size()) }
     };
     if alloc.is_null() {

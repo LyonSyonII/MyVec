@@ -458,6 +458,7 @@ impl<T> Drop for Deque<T> {
 
 impl<T> FromIterator<T> for Deque<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let iter = iter.into_iter();
         let mut deque = Deque::new();
         deque.extend(iter);
         deque
